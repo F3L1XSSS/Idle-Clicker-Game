@@ -38,7 +38,7 @@ const BuisnessGame = () => {
     setPurchasedUpgrade(false);
     setGreenCrystals(0);
     // Сброс состояний до начальных значений
-    setBalance(1000000);
+    setBalance(0);
     setIncome(1);
     setUpgradeCost(10);
     setUpgradeCount(0);
