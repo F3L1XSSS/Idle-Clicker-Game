@@ -2,8 +2,9 @@ import {useState, useEffect, useRef} from 'react'
 import Location from './Component/Location';
 import backgroundMusic from './Audio/please-calm-my-mind-125566.mp3'
 import backgroundImage from './Photo/Fone.webp'
+import greenCrystal from './Photo/greenCrystal.png'
 
-const BusinessWindow = ({ name, income, onUpgrade, upgradeCost, level, unlocked, onUnlock, unlockCost }) => {
+const BusinessWindow = ({ name, income, onUpgrade, upgradeCost, level, unlocked, onUnlock, unlockCost, multiplier, convertNumberToShortForm }) => {
 
   if (!unlocked) {
     return (
@@ -19,13 +20,13 @@ const BusinessWindow = ({ name, income, onUpgrade, upgradeCost, level, unlocked,
   return (
     <div className="bg-gray-700 p-5 rounded-lg shadow-lg">
       <h3 className="text-2xl font-bold mb-4">{name}</h3>
-      <p className="text-xl mb-4">Income: <span className="font-bold">${income.toFixed(2)}</span> per second</p>
+      <p className="text-xl mb-4">Income: <span className="font-bold">${convertNumberToShortForm(income * multiplier)}</span> per second</p>
       <p className="text-xl mb-4">Your Level: <span className="font-bold">{level}</span></p>
       <button 
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110"
         onClick={onUpgrade}
       >
-        Upgrade for ${upgradeCost.toFixed(2)}
+        Upgrade for ${convertNumberToShortForm(upgradeCost)}
       </button>
     </div>
   );
@@ -37,7 +38,7 @@ const BuisnessGame = () => {
     setPurchasedUpgrade(false);
     setGreenCrystals(0);
     // Сброс состояний до начальных значений
-    setBalance(0);
+    setBalance(1000000);
     setIncome(1);
     setUpgradeCost(10);
     setUpgradeCount(0);
@@ -51,6 +52,11 @@ const BuisnessGame = () => {
     setThirdIncome(0);
     setThirdUpgradeCost(10000);
     setThirdUpgradeCount(0);
+
+    setFirstBusinessMultiplier(1);
+    setSecondBusinessMultiplier(1);
+    setThirdBusinessMultiplier(1);
+
 
     // Очистка localStorage
     localStorage.clear();
@@ -79,6 +85,26 @@ const BuisnessGame = () => {
     setIsPlaying(!isPlaying);
   };
 
+
+  function convertNumberToShortForm(number) {
+    let suffixes = 'mbtdefghijklnopqrsuvwxyz'.split('');
+    let suffixIndex = -1;
+    let processedNumber = number;
+  
+    while (processedNumber >= 1000000) {
+      processedNumber /= 1000000;
+      suffixIndex++;
+    }
+  
+    let suffix = suffixIndex === -1 ? '' : suffixes[suffixIndex % suffixes.length];
+    // Для суффиксов больше 'z', добавляем дополнительную букву
+    let additionalSuffix = Math.floor(suffixIndex / suffixes.length);
+    if (additionalSuffix > 0) {
+      suffix = String.fromCharCode(96 + additionalSuffix) + suffix;
+    }
+  
+    return processedNumber.toFixed(2) + suffix;
+  }
  
   const TotalUpgrade = ({ id, totname, totcost, totOnPurshcase, totPurchcased }) => {
 
@@ -126,22 +152,34 @@ const BuisnessGame = () => {
     setIsStoreOpen(!isStoreOpen);
   };
 
+const [firstBusinessMultiplier, setFirstBusinessMultiplier] = useState(1);
+const [secondBusinessMultiplier, setSecondBusinessMultiplier] = useState(1);
+const [thirdBusinessMultiplier, setThirdBusinessMultiplier] = useState(1);
 
   const locations = [
-    { id: 1, name: 'Desert', cost: 10000 }
+    { id: 1, name: 'Desert', cost: 1000 }
     // Добавьте здесь больше локаций по мере необходимости
   ];
 
   const totalUpgrade = [
     { 
-      id: 2, totname: 'Total Upgrade #1', totcost: 100
+      id: 2, totname: 'First Buisness Upgrade #1', totcost: 100
     },
     {
-      id: 3, totname: 'Total Upgrade #2', totcost: 10000
+      id: 3, totname: 'Second Buisness Upgrade #1', totcost: 10000
     },
     {
-      id: 4, totname: 'Total Upgrade #4', totcost: 1000000
-    }
+      id: 4, totname: 'Third Buisness Upgrade #1', totcost: 100000
+    },
+    { 
+      id: 5, totname: 'First Buisness Upgrade #2', totcost: 10000
+    },
+    {
+      id: 6, totname: 'Second Buisness Upgrade #2', totcost: 50000
+    },
+    {
+      id: 7, totname: 'Third Buisness Upgrade #2', totcost: 500000
+    },
     
   ]
 
@@ -153,12 +191,25 @@ const BuisnessGame = () => {
     // Предполагается, что balance полностью конвертируется в greenCrystals
   };
 
-  const purchaseUpgrade = (id, totcost) => {
-    if (balance >= totcost) {
-      setBalance(currentBalance => currentBalance - totcost);
+  const purchaseUpgrade = (id, cost) => {
+    if (balance >= cost) {
+      setBalance(currentBalance => currentBalance - cost);
       setPurchasedUpgrade(prev => ({ ...prev, [id]: true }));
-      // Дополнительно, если нужно, обновите другие связанные состояния
-      setIncome(currentIncome => currentIncome * 2);
+      
+      // Определите, какой бизнес нужно улучшить на основе id улучшения
+      if (id === 2) {
+        setFirstBusinessMultiplier(prev => prev * 2); // Например, удваиваем доход
+      } else if (id === 3) {
+        setSecondBusinessMultiplier(prev => prev * 2);
+      } else if (id === 4) {
+        setThirdBusinessMultiplier(prev => prev * 2);
+      } else if (id === 5) {
+        setFirstBusinessMultiplier(prev => prev * 2);
+      } else if (id === 6) {
+        setSecondBusinessMultiplier(prev => prev * 2);
+      } else if (id ===7) {
+        setThirdBusinessMultiplier(prev => prev * 2);
+      }
     } else {
       alert('Not enough balance to unlock!');
     }
@@ -232,17 +283,21 @@ const BuisnessGame = () => {
   }, [balance, income, upgradeCost, upgradeCount, secondWindowUnlocked, secondIncome, secUpgradeCost, secUpgradeCount, thirdWindowUnlocked, thirdIncome, thirdUpgradeCost, thirdUpgradeCount, greenCrystals, purchasedLocations, purchasedUpgrade]);
 
     useEffect(() => {
-      const interval = setInterval(() => {
-        setBalance((currentBalance) => currentBalance + income + secondIncome + thirdIncome);
-      }, 1000);
-      
-      return() =>
-        clearInterval(interval);
-    }, [income + secondIncome + thirdIncome])
+  const interval = setInterval(() => {
+    setBalance((currentBalance) => 
+      currentBalance +
+      income * firstBusinessMultiplier +
+      secondIncome * secondBusinessMultiplier +
+      thirdIncome * thirdBusinessMultiplier
+    );
+  }, 1000);
+  
+  return() => clearInterval(interval);
+}, [income, firstBusinessMultiplier, secondIncome, secondBusinessMultiplier, thirdIncome, thirdBusinessMultiplier]);
 
     const purshcaseUpgrade = () => {
       if (balance >= upgradeCost) {
-        setIncome(currentIncome => currentIncome * 1.7);
+        setIncome(currentIncome => currentIncome * 1.5);
         setBalance(currentBalance => currentBalance - upgradeCost)
         setUpgradeCount(upgradeCount => upgradeCount + 1);
 
@@ -283,11 +338,11 @@ const BuisnessGame = () => {
      
     const secPurshcaseUpgrade = () => {
       if (balance >= secUpgradeCost) {
-        setSecondIncome(currentsecondIncome => currentsecondIncome * 1.6 + 10);
+        setSecondIncome(currentsecondIncome => currentsecondIncome * 1.7 + 10);
         setBalance(prevBalance => prevBalance - secUpgradeCost);
         setSecUpgradeCount(secUpgradeCount + 1);
 
-        setSecUpgradeCost(currentsecCost => currentsecCost * 3);
+        setSecUpgradeCost(currentsecCost => currentsecCost * 2.5);
         if ((secUpgradeCount + 1) % 5 === 0){
           setSecondIncome(currentsecondIncome => currentsecondIncome * 1.25)
         }
@@ -304,11 +359,11 @@ const BuisnessGame = () => {
 
   const thirdPurshcaseUpgrade = () => {
     if (balance >= thirdUpgradeCost) {
-      setThirdIncome(currentthirdIncome => currentthirdIncome * 1.5 + 100);
+      setThirdIncome(currentthirdIncome => currentthirdIncome * 2 + 100);
       setBalance(prevBalance => prevBalance - thirdUpgradeCost);
       setThirdUpgradeCount(thirdUpgradeCount + 1);
 
-      setThirdUpgradeCost(currentthirdCost => currentthirdCost * 5);
+      setThirdUpgradeCost(currentthirdCost => currentthirdCost * 3);
       if ((thirdUpgradeCount + 1) % 5 === 0){
         setThirdIncome(currentthirdIncome => currentthirdIncome * 1.5)
       }
@@ -335,11 +390,13 @@ const BuisnessGame = () => {
         </button>
         </div>
 {isStoreOpen && (
-  <div style={{zIndex: 100, maxHeight: '500px', overflowY: 'auto'}}className="bg-gray-700 p-5 rounded-lg shadow-lg mt-5 absolute right-0 top-14 mr-4">
+  <div style={{zIndex: 100, maxHeight: '500px', overflowY: 'auto', width: '400px'}}className="bg-gray-700 p-5 rounded-lg shadow-lg mt-5 absolute right-0 top-14 mr-4">
   <h2 className="text-xl mb-4">Магазин локаций</h2>
-  <p className="text-xl mb-4">Green Crystals: <span className="font-bold">{greenCrystals}</span></p>
+  <div className="flex items-center mb-4">
+  <img src={greenCrystal} alt="Green Crystal" className="inline-block h-6 w-6" /> <span className="font-bold">{greenCrystals}</span>
+  </div>
   <button onClick={convertBalanceToGreenCrystals} className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110 mb-4">
-    Конвертировать баланс в Green Crystals
+    Конвертировать баланс в <img src={greenCrystal} alt="Green Crystal" className="inline-block h-6 w-6" />
   </button>
     {locations.map(location => (
         <Location
@@ -372,7 +429,7 @@ const BuisnessGame = () => {
 )}
       <button onClick={resetGame} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110">Start Over</button>
       <h1 className="text-4xl font-bold mb-6">Business Game</h1>
-      <p className="text-xl mb-2">Balance: <span className="font-bold">${balance.toFixed(2)}</span></p>
+      <p className="text-xl mb-2">Balance: <span className="font-bold">${convertNumberToShortForm(balance)}</span></p>
       <div className="flex flex-wrap justify-center gap-4">
         <BusinessWindow
           name="First Bussiness"
@@ -381,6 +438,8 @@ const BuisnessGame = () => {
           upgradeCost={upgradeCost}
           level={upgradeCount}
           unlocked={true}
+          multiplier={firstBusinessMultiplier}
+          convertNumberToShortForm={convertNumberToShortForm}
         />
         <BusinessWindow
           name="Second Bussiness"
@@ -391,6 +450,8 @@ const BuisnessGame = () => {
           unlocked={secondWindowUnlocked}
           onUnlock={unlockSecondWindow}
           unlockCost={secondUnlockCost}
+          multiplier={secondBusinessMultiplier}
+          convertNumberToShortForm={convertNumberToShortForm}
         />
           <BusinessWindow
           name="Third Bussiness"
@@ -401,6 +462,8 @@ const BuisnessGame = () => {
           unlocked={thirdWindowUnlocked}
           onUnlock={unlockThirdWindow}
           unlockCost={thirdUnlockCost}
+          multiplier={thirdBusinessMultiplier}
+          convertNumberToShortForm={convertNumberToShortForm}
         />
         
       </div>
