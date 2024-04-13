@@ -20,13 +20,13 @@ const BusinessWindow = ({ name, income, onUpgrade, upgradeCost, level, unlocked,
   return (
     <div className="bg-gray-700 p-5 rounded-lg shadow-lg">
       <h3 className="text-2xl font-bold mb-4">{name}</h3>
-      <p className="text-xl mb-4">Income: <span className="font-bold">${convertNumberToShortForm(income * multiplier)}</span> per second</p>
+      <p className="text-xl mb-4">Income: <span className="font-bold">${convertNumberToShortForm(income.toFixed(2) * multiplier.toFixed(2))}</span> per second</p>
       <p className="text-xl mb-4">Your Level: <span className="font-bold">{level}</span></p>
       <button 
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110"
         onClick={onUpgrade}
       >
-        Upgrade for ${convertNumberToShortForm(upgradeCost)}
+        Upgrade for ${convertNumberToShortForm(upgradeCost.toFixed(2))}
       </button>
     </div>
   );
@@ -87,14 +87,18 @@ const BuisnessGame = () => {
 
 
   function convertNumberToShortForm(number) {
-    let suffixes = 'mbtdefghijklnopqrsuvwxyz'.split('');
+    let suffixes = 'ambtdefghijklnopqrsuvwxyz'.split('');
     let suffixIndex = -1;
     let processedNumber = number;
-  
-    while (processedNumber >= 1000000) {
-      processedNumber /= 1000000;
+
+  if (processedNumber >= 999999)  {
+    while (processedNumber >= 1000) {
+      processedNumber /= 1000;
       suffixIndex++;
     }
+  } else {
+    return(number);
+  }
   
     let suffix = suffixIndex === -1 ? '' : suffixes[suffixIndex % suffixes.length];
     // Для суффиксов больше 'z', добавляем дополнительную букву
@@ -393,7 +397,7 @@ const [thirdBusinessMultiplier, setThirdBusinessMultiplier] = useState(1);
   <div style={{zIndex: 100, maxHeight: '500px', overflowY: 'auto', width: '400px'}}className="bg-gray-700 p-5 rounded-lg shadow-lg mt-5 absolute right-0 top-14 mr-4">
   <h2 className="text-xl mb-4">Магазин локаций</h2>
   <div className="flex items-center mb-4">
-  <img src={greenCrystal} alt="Green Crystal" className="inline-block h-6 w-6" /> <span className="font-bold">{greenCrystals}</span>
+  <img src={greenCrystal} alt="Green Crystal" className="inline-block h-6 w-6" /> <span className="font-bold">{greenCrystals.toFixed(4)}</span>
   </div>
   <button onClick={convertBalanceToGreenCrystals} className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110 mb-4">
     Конвертировать баланс в <img src={greenCrystal} alt="Green Crystal" className="inline-block h-6 w-6" />
@@ -429,7 +433,7 @@ const [thirdBusinessMultiplier, setThirdBusinessMultiplier] = useState(1);
 )}
       <button onClick={resetGame} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110">Start Over</button>
       <h1 className="text-4xl font-bold mb-6">Business Game</h1>
-      <p className="text-xl mb-2">Balance: <span className="font-bold">${convertNumberToShortForm(balance)}</span></p>
+      <p className="text-xl mb-2">Balance: <span className="font-bold">${convertNumberToShortForm(balance.toFixed(2))}</span></p>
       <div className="flex flex-wrap justify-center gap-4">
         <BusinessWindow
           name="First Bussiness"
