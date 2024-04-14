@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import greenCrystal from '../Photo/greenCrystal.png'
 
 const Location = ({ id, name, cost, onPurchase, purchased }) => {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ const Location = ({ id, name, cost, onPurchase, purchased }) => {
     <>
     <div key={id} className="bg-gray-600 p-4 rounded-lg shadow-inner">
       <h3 className="text-lg">{name}</h3>
-      <p>Стоимость: {cost} Green Crystals</p>
+      <p>Стоимость: {cost}  <img src={greenCrystal} alt="Green Crystal" className="inline-block h-6 w-6" /></p>
       {!purchased ? (
         <button
           onClick={() => onPurchase(id, cost)}
