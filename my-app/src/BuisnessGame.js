@@ -40,7 +40,7 @@ const BusinessWindow = ({
         onClick={onUpgrade}
         disabled={isFifthUpgrade && sciencePoints < 1} // Отключить кнопку, если это пятое улучшение и не хватает очков науки
       >
-        {isFifthUpgrade ? `Upgrade for ${convertNumberToShortForm(upgradeCost.toFixed(2))} and 1 Science Point` : `Upgrade for ${convertNumberToShortForm(upgradeCost.toFixed(2))}`}
+        {isFifthUpgrade ? `Upgrade for ${convertNumberToShortForm(upgradeCost.toFixed(2))} and 1 🧪 ` : `Upgrade for ${convertNumberToShortForm(upgradeCost.toFixed(2))}`}
       </button>
     </div>
   );
@@ -49,6 +49,7 @@ const BusinessWindow = ({
 
 const BuisnessGame = () => {
   const resetGame = () => {
+    setIsResearching(false);
     setPurchasedLocations(false);
     setPurchasedUpgrade(false);
     setGreenCrystals(1000);
@@ -79,35 +80,63 @@ const BuisnessGame = () => {
   };
 
 
-  const [isLabOpen, setIsLabOpen] = useState(false);
-  const [isResearching, setIsResearching] = useState(false);
-  const [researchTimeLeft, setResearchTimeLeft] = useState(60); // Время в секундах
-  const [sciencePoints, setSciencePoints] = useState(0);
+
 
   // Функция для начала исследования
   const startResearch = () => {
     if (!isResearching) {
       setIsResearching(true);
-      let timer = researchTimeLeft;
-      const intervalId = setInterval(() => {
-        timer -= 1;
-        setResearchTimeLeft(timer);
-        if (timer <= 0) {
-          clearInterval(intervalId);
-          setIsResearching(false);
-          setSciencePoints(sciencePoints + 1); // Начисляем очки науки
-          setResearchTimeLeft(60); // Сброс таймера
-        }
-      }, 1000);
+      const startTime = Date.now();
+      const endTime = startTime + researchTimeLeft * 1000;
+      localStorage.setItem('researchEndTime', endTime);
+      beginResearchTimer(endTime); // Вызов функции, которая начнет таймер
     }
   };
+  
+  // Функция для установки таймера исследования
+  const beginResearchTimer = (endTime) => {
+    let timer = (endTime - Date.now()) / 1000;
+    const intervalId = setInterval(() => {
+      timer -= 1;
+      setResearchTimeLeft(timer);
+      if (timer <= 0) {
+        clearInterval(intervalId);
+        finishResearch();
+      }
+    }, 1000);
+  };
+  
+  // Функция, которая вызывается, когда исследование завершено
+  const finishResearch = () => {
+    setIsResearching(false);
+    setSciencePoints((prevPoints) => prevPoints + 1); // Начисляем очки науки
+    setResearchTimeLeft(60); // Сброс таймера
+    localStorage.removeItem('researchEndTime'); // Удаляем из localStorage
+  };
+  
+  useEffect(() => {
+    // Восстановление таймера исследования из localStorage при монтировании компонента
+    const savedEndTime = localStorage.getItem('researchEndTime');
+    const currentTime = Date.now();
+  
+    if (savedEndTime && currentTime < savedEndTime) {
+      setIsResearching(true);
+      beginResearchTimer(Number(savedEndTime));
+    }
+    // Очистка интервала при размонтировании компонента
+    return () => {
+      const intervalId = window.setInterval(() => {}, Number.MAX_SAFE_INTEGER);
+      for (let i = 0; i < intervalId; i++) {
+        clearInterval(i);
+      }
+    };
+  }, []);
 
   // Отображение лаборатории
   const toggleLab = () => {
     if (isStoreOpen) setIsStoreOpen(false);
     setIsLabOpen(!isLabOpen);
   };
-
 
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -304,7 +333,12 @@ const BuisnessGame = () => {
     }
   };
   //valuta green crystals
+  const [isLabOpen, setIsLabOpen] = useState(false);
+  const [isResearching, setIsResearching] = useState(false);
 
+
+  const [researchTimeLeft, setResearchTimeLeft] = useState(60); // Время в секундах
+  const [sciencePoints, setSciencePoints] = useState(() => Number(localStorage.getItem('sciencePoints')) || 0);
   //const [isPlaying, setIsPlaying] = useState(false);
 
   const [purchasedUpgrade, setPurchasedUpgrade] = useState(() => {
@@ -343,6 +377,8 @@ const BuisnessGame = () => {
   useEffect(() => {
     // Сохранение текущего состояния в localStorage
     const saveState = () => {
+      localStorage.setItem('sciencePoints', sciencePoints.toString());
+
       localStorage.setItem('firstBusinessMultiplier', firstBusinessMultiplier.toString());
       localStorage.setItem('secondBusinessMultiplier', secondBusinessMultiplier.toString());
       localStorage.setItem('thirdBusinessMultiplier', thirdBusinessMultiplier.toString());
@@ -369,7 +405,7 @@ const BuisnessGame = () => {
 
     // Вызов сохранения состояния при изменении любого из состояний
     saveState();
-  }, [balance, income, upgradeCost, upgradeCount, secondWindowUnlocked, secondIncome, secUpgradeCost, secUpgradeCount, thirdWindowUnlocked, thirdIncome, thirdUpgradeCost, thirdUpgradeCount, greenCrystals, purchasedLocations, purchasedUpgrade, secondBusinessMultiplier, firstBusinessMultiplier, thirdBusinessMultiplier]);
+  }, [balance, income, upgradeCost, upgradeCount, secondWindowUnlocked, secondIncome, sciencePoints, secUpgradeCost, secUpgradeCount, thirdWindowUnlocked, thirdIncome, thirdUpgradeCost, thirdUpgradeCount, greenCrystals, purchasedLocations, purchasedUpgrade, secondBusinessMultiplier, firstBusinessMultiplier, thirdBusinessMultiplier]);
 
     useEffect(() => {
   const interval = setInterval(() => {
@@ -408,7 +444,7 @@ const BuisnessGame = () => {
     // Если средств недостаточно или не хватает очков науки для пятого улучшения
     let errorMessage = "Balance not enough!";
     if (isFifthUpgrade && sciencePoints === 0) {
-      errorMessage = "Not enough science points for this upgrade!";
+      errorMessage = "Not enough science points  for this upgrade!";
     }
     alert(errorMessage);
   }
@@ -493,10 +529,14 @@ const BuisnessGame = () => {
         {isLabOpen && (
           <div className="absolute right-0 mt-5 top-14 mr-4 bg-gray-700 p-5 rounded-lg shadow-lg" style={{ zIndex: 100, maxHeight: '500px', overflowY: 'auto', width: '400px', backgroundImage: `url(${backgroundImage})` }}>
             <h2 className="text-xl mb-2">Лаборатория</h2>
-            <p className='mb-2'>Очки науки: {sciencePoints}</p>
-            <button onClick={startResearch} disabled={isResearching} className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
-              Начать исследование {isResearching ? `${researchTimeLeft} сек` : ''}
-            </button>
+            <p className='mb-2'>{sciencePoints}🧪</p>
+            <button
+  onClick={startResearch}
+  disabled={isResearching}
+  className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+>
+  {isResearching ? `Идет исследование ${researchTimeLeft.toFixed(0)} сек` : 'Начать исследование'}
+</button>
           </div>
         )}
 {isStoreOpen && (
