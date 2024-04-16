@@ -4,8 +4,11 @@ import backgroundMusic from './Audio/steps-full.wav'
 import backgroundImage from './Photo/Fone2.webp'
 import YellowCrystal from './Photo/yellowCrystal.png'
 import BackToLock from './Component/BackToLoc';
+import BuisnessPhone from './Photo/BuisnessPhone.webp';
 
-const SecBuisnessWindow = ({fname, fIncome, fOnUpgrade, fUpgradeCost, fLevel, fUnlocked, fOnUnlock, fUnlockCost, multiplier}) => {
+const SecBuisnessWindow = ({fname, fIncome, fOnUpgrade, fUpgradeCost, fLevel, fUnlocked, fOnUnlock, fUnlockCost, multiplier, fConvertNumberToShortForm, sciencePoints}) => {
+  const isFifthUpgrade = (fLevel + 1) % 5 === 0;
+
   if (!fUnlocked) {
     return (
       <button 
@@ -18,15 +21,16 @@ const SecBuisnessWindow = ({fname, fIncome, fOnUpgrade, fUpgradeCost, fLevel, fU
   }
 
   return (
-    <div className="bg-gray-700 p-5 rounded-lg shadow-lg">
-      <h3 className="text-2xl font-bold mb-4">{fname}</h3>
-      <p className="text-xl mb-4">Income: <span className="font-bold">${fIncome.toFixed(2) * multiplier.toFixed(2)}</span> per second</p>
-      <p className="text-xl mb-4">Your Level: <span className="font-bold">{fLevel}</span></p>
+    <div style={{backgroundImage: `url(${BuisnessPhone})`}} className="p-5 rounded-lg shadow-lg">
+      <h3 className="text-2xl font-bold mb-4 text-black">{fname}</h3>
+      <p className="text-xl mb-4 text-black">Income: <span className="font-bold">${fConvertNumberToShortForm(fIncome.toFixed(2) * multiplier.toFixed(2))}</span> per second</p>
+      <p className="text-xl mb-4 text-black">Your Level: <span className="font-bold">{fLevel}</span></p>
       <button 
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110"
+        className="bg-red-500 hover:bg-red-700 text-black font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110"
         onClick={fOnUpgrade}
+        disabled={isFifthUpgrade && sciencePoints < 1} // Отключить кнопку, если это пятое улучшение и не хватает очков науки
       >
-        Upgrade for ${fUpgradeCost.toFixed(2)}
+        `Upgrade for ${fConvertNumberToShortForm(fUpgradeCost.toFixed(2))}
       </button>
     </div>
   );
@@ -45,8 +49,10 @@ const LocationPage = () => {
     localStorage.removeItem('purchasedLocations');
   };
 
+
+
   const convertBalanceToYellowCrystal = () => {
-    const conversionRate = 10000000; // Курс обмена
+    const conversionRate = 1000000000; // Курс обмена
     const newYellowCrystal = fBalance / conversionRate;
     setYellowCrystal(currentYellowCrystal => currentYellowCrystal + newYellowCrystal);
     setFBalance(0); // Обнуляем balance после конвертации
@@ -62,11 +68,36 @@ const LocationPage = () => {
     }
   };
 
+  function fConvertNumberToShortForm(number) {
+    let suffixes = 'ambtdefghijklnopqrsuvwxyz'.split('');
+    let suffixIndex = -1;
+    let processedNumber = number;
+
+  if (processedNumber >= 999999)  {
+    while (processedNumber >= 1000) {
+      processedNumber /= 1000;
+      suffixIndex++;
+    }
+  } else {
+    return(number);
+  }
+  
+    let suffix = suffixIndex === -1 ? '' : suffixes[suffixIndex % suffixes.length];
+    // Для суффиксов больше 'z', добавляем дополнительную букву
+    let additionalSuffix = Math.floor(suffixIndex / suffixes.length);
+    if (additionalSuffix > 0) {
+      suffix = String.fromCharCode(96 + additionalSuffix) + suffix;
+    }
+  
+    return processedNumber.toFixed(2) + suffix;
+  }
+
   const purchaseUpgrade = (id, cost) => {
     if (fBalance >= cost) {
       setFBalance(currentfBalance => currentfBalance - cost);
       setSecPurchasedUpgrade(prev => ({ ...prev, [id]: true }));
-      
+
+
       if (id === 2 || id === 5) {
         setSFirstBusinessMultiplier(prev => {
           const newMultiplier = prev * 2;
@@ -116,7 +147,7 @@ const LocationPage = () => {
 
     return (
         <>
-        <div key={id} className="bg-gray-600 p-4 rounded-lg shadow-inner">
+        <div key={id} className="bg-gray-600 p-4 rounded-lg shadow-inner mt-2">
           <h3 className="text-lg">{totname}</h3>
           <p>Стоимость: {totcost} $</p>
           <p>Effect: income x2</p>
@@ -173,7 +204,6 @@ const LocationPage = () => {
       id: 5, totname: 'First Buisness Upgrade #2', totcost: 1000000
     },  
   ]
-
   const [purchasedLocations, setPurchasedLocations] = useState(() => {
     const savedLocations = localStorage.getItem('purchasedLocations');
     return savedLocations ? JSON.parse(savedLocations) : {};
@@ -184,7 +214,7 @@ const LocationPage = () => {
   });
 
   const [yellowCrystal, setYellowCrystal] = useState(() => Number(localStorage.getItem('yellowCrystal')) || 1000);
-  const [fBalance, setFBalance] = useState(() => Number(localStorage.getItem('fBalance')) || 0);
+  const [fBalance, setFBalance] = useState(() => Number(localStorage.getItem('fBalance')) || 100000000);
   const [fIncome, setFIncome] = useState(() => Number(localStorage.getItem('fIncome')) || 100);
   const [fUpgradeCost, setFUpgradeCost] = useState (() => Number(localStorage.getItem('fUpgradeCost')) || 1000);
   const [fUpgradeCount, setFUpgradeCount] = useState (() => Number(localStorage.getItem('fUpgradeCount')) || 0);
@@ -214,6 +244,7 @@ const LocationPage = () => {
   }, [fIncome,sFirstBusinessMultiplier]);
 
   const fPurshcaseUpgrade = () => {
+
     if (fBalance >= fUpgradeCost) {
       setFIncome(currentfIncome => currentfIncome * 1.7);
         setFBalance(currentfBalance => currentfBalance - fUpgradeCost)
@@ -221,14 +252,9 @@ const LocationPage = () => {
 
         setFUpgradeCost(currentfCost => currentfCost * 2);
 
-        if ((fUpgradeCount + 1) % 5 === 0) {
-          setFIncome(currentfIncome => currentfIncome * 1.2);
-        }
-        if ((fUpgradeCount + 1) % 10 === 0) {
-          setFIncome(currentfIncome => currentfIncome * 1.3);
-        }
       } else {
-        alert("balance not enough!");
+        let fErrorMessage = "Balance not enough!";
+        alert(fErrorMessage);
       }
   }
 
@@ -243,9 +269,9 @@ const LocationPage = () => {
           {isPlaying ? '🔊' : '🔇'}
         </button>
         </div>
-
+        
         {isStoreOpen && (
-  <div style={{zIndex: 100, maxHeight: '500px', overflowY: 'auto', width: '400px'}}className="bg-gray-700 p-5 rounded-lg shadow-lg mt-5 absolute right-0 top-14 mr-4">
+  <div style={{zIndex: 100, maxHeight: '500px', overflowY: 'auto', width: '400px', backgroundImage: `url(${BuisnessPhone})`}}className="bg-gray-700 p-5 rounded-lg shadow-lg mt-5 absolute right-0 top-14 mr-4">
   <h2 className="text-xl mb-4">Магазин локаций</h2>
   <div className="flex items-center mb-4">
   <img src={YellowCrystal} alt="Green Crystal" className="inline-block h-6 w-6" /> <span className="font-bold">{yellowCrystal.toFixed(4)}</span>
@@ -273,7 +299,7 @@ const LocationPage = () => {
       ))}
 
 <div className="mt-8 mb-4">
-      <h2 className="text-xl font-bold">Upgrades</h2>
+      <h2 className="text-black text-xl font-bold">Upgrades</h2>
     </div>
 
     {totalUpgrade.map(totalUpgradeItem => (
@@ -292,8 +318,8 @@ const LocationPage = () => {
 )}
 
 
-      <h1 className="text-4xl font-bold mb-6 text-orange-800">Business Game</h1>
-      <p className="text-orange-800 text-xl mb-4">Balance: <span className="text-orange-800 font-bold">${fBalance.toFixed(2)}</span></p>
+      <h1 className="text-4xl font-bold mb-6 text-black">Business Game</h1>
+      <p className="text-xl mb-2 text-black">Balance: <span className="font-bold text-black">${fConvertNumberToShortForm(fBalance.toFixed(2))}</span></p>
       <div className="flex flex-wrap justify-center gap-4">
       <SecBuisnessWindow
           fname="First Buisness"
@@ -303,6 +329,7 @@ const LocationPage = () => {
           fLevel={fUpgradeCount}
           fUnlocked={true}
           multiplier={sFirstBusinessMultiplier}
+          fConvertNumberToShortForm={fConvertNumberToShortForm}
         />
       </div>
     </div>
