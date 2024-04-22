@@ -5,6 +5,7 @@ import backgroundImage from './Photo/Fone.webp'
 import greenCrystal from './Photo/greenCrystal.png'
 import backgroundImageRev from './Photo/FoneRev.png'
 import menuIcon from './Photo/menuIcon.png'
+import RundomButton from './Component/RandomEvent'
 
 const BusinessWindow = ({
   name,
@@ -56,6 +57,14 @@ const BuisnessGame = () => {
       return savedIncome ? Number(savedIncome) : 1;
     });
   const resetGame = () => {
+
+    if (researchIntervalId !== null) {
+      clearInterval(researchIntervalId);
+      setResearchIntervalId(null);
+    }
+    setResearchCost(0);
+    setPayment(0);
+    setDebt(0);
     setTaxes(0);
     setIsResearching(false);
     setPurchasedLocations(false);
@@ -87,57 +96,77 @@ const BuisnessGame = () => {
     localStorage.clear();
   };
 
-
-
-
+  const [researchIntervalId, setResearchIntervalId] = useState(null);
   // Функция для начала исследования
+  const [researchCost, setResearchCost] = useState(() => {
+    const initialCost = Number(localStorage.getItem('researchCost'));
+    return initialCost >= 0 ? initialCost : 0; // Если стоимость уже есть в localStorage, используем ее, иначе начинаем с 0
+  });
+
   const startResearch = () => {
-    if (!isResearching) {
-      setIsResearching(true);
-      const startTime = Date.now();
-      const endTime = startTime + researchTimeLeft * 1000;
-      localStorage.setItem('researchEndTime', endTime);
-      beginResearchTimer(endTime); // Вызов функции, которая начнет таймер
+    // Если уже идет исследование или нет средств, ничего не делаем
+    if (isResearching || balance < researchCost) {
+      if (balance < researchCost) {
+        alert('Недостаточно средств для исследования');
+      }
+      return;
     }
+    
+    setIsResearching(true);
+    setBalance((currentBalance) => currentBalance - researchCost);
+    const endTime = Date.now() + researchTimeLeft * 1000;
+    localStorage.setItem('researchEndTime', endTime);
+    beginResearchTimer(endTime);
   };
   
-  // Функция для установки таймера исследования
   const beginResearchTimer = (endTime) => {
-    let timer = (endTime - Date.now()) / 1000;
+    // Устанавливаем новый таймер и сразу же сохраняем его ID
     const intervalId = setInterval(() => {
-      timer -= 1;
+      const timer = (endTime - Date.now()) / 1000;
       setResearchTimeLeft(timer);
+  
       if (timer <= 0) {
         clearInterval(intervalId);
         finishResearch();
       }
     }, 1000);
+    setResearchIntervalId(intervalId);
   };
   
-  // Функция, которая вызывается, когда исследование завершено
   const finishResearch = () => {
+    setSciencePoints((prevPoints) => prevPoints + 1);
+    setResearchTimeLeft(60);
+    localStorage.removeItem('researchEndTime');
+    
+    const nextCost = researchCost === 0 ? 100 : Math.floor(researchCost * 1.5);
+    setResearchCost(nextCost);
+    localStorage.setItem('researchCost', nextCost.toString());
+    
     setIsResearching(false);
-    setSciencePoints((prevPoints) => prevPoints + 1); // Начисляем очки науки
-    setResearchTimeLeft(60); // Сброс таймера
-    localStorage.removeItem('researchEndTime'); // Удаляем из localStorage
+    // Не забудьте сбросить ID интервала
+    setResearchIntervalId(null);
   };
   
   useEffect(() => {
-    // Восстановление таймера исследования из localStorage при монтировании компонента
+    return () => {
+      if (researchIntervalId !== null) {
+        clearInterval(researchIntervalId);
+      }
+    };
+  }, [researchIntervalId]);
+
+  useEffect(() => {
     const savedEndTime = localStorage.getItem('researchEndTime');
     const currentTime = Date.now();
-  
+    
     if (savedEndTime && currentTime < savedEndTime) {
       setIsResearching(true);
       beginResearchTimer(Number(savedEndTime));
+    } else {
+      setResearchTimeLeft(60);
+      setIsResearching(false);
+      localStorage.removeItem('researchEndTime');
     }
-    // Очистка интервала при размонтировании компонента
-    return () => {
-      const intervalId = window.setInterval(() => {}, Number.MAX_SAFE_INTEGER);
-      for (let i = 0; i < intervalId; i++) {
-        clearInterval(i);
-      }
-    };
   }, []);
 
   // Отображение лаборатории
@@ -149,28 +178,35 @@ const BuisnessGame = () => {
 
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef(new Audio(backgroundMusic));
+const audioRef = useRef(new Audio(backgroundMusic));
 
-  useEffect(() => {
-    // Автоматическое воспроизведение, когда компонент монтируется
-    audioRef.current.play().catch((e) => console.log(`Не удалось воспроизвести звук: ${e}`));
-    audioRef.current.loop = true;
+useEffect(() => {
+  // Управление воспроизведением музыки должно происходить только при изменении isPlaying
+  if (isPlaying) {
+    // Проигрываем музыку, если isPlaying === true
+    const playPromise = audioRef.current.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(e => {
+        console.log(`Не удалось воспроизвести звук: ${e}`);
+      });
+    }
+  } else {
+    // Останавливаем музыку, если isPlaying === false
+    audioRef.current.pause();
+  }
 
-    // Очистка перед размонтированием компонента
-    return () => {
-      audioRef.current.pause();
-    };
-  }, []);
-
-  useEffect(() => {
-    // Управление воспроизведением музыки
-    isPlaying ? audioRef.current.play() : audioRef.current.pause();
-  }, [isPlaying]);
-
-  const toggleSound = () => {
-    setIsPlaying(!isPlaying);
+  // Устанавливаем loop здесь, чтобы гарантировать, что оно применяется после play
+  audioRef.current.loop = true;
+  
+  // Очистка только происходит при размонтировании компонента
+  return () => {
+    audioRef.current.pause();
   };
+}, [isPlaying]); // Убедитесь, что у вас есть isPlaying в массиве зависимостей
 
+const toggleSound = () => {
+  setIsPlaying(!isPlaying);
+};
 
   function convertNumberToShortForm(number) {
     let suffixes = 'ambtdefghijklnopqrsuvwxyz'.split('');
@@ -300,6 +336,66 @@ const toggleMenu = (event) => {
   setIsMenuOpen(!isMenuOpen);
 };
 
+const [creditAmount, setCreditAmount] = useState(() => Number(localStorage.getItem('creditAmount')) || 0);
+const [debt, setDebt] = useState(() => Number(localStorage.getItem('debt')) || 0);
+const [payment, setPayment] = useState(() => Number(localStorage.getItem('payment')) || 0);
+
+useEffect(() => {
+  let interval;
+  if (debt > 0) {
+    interval = setInterval(() => {
+      // Расчет платежа и пени
+      const debtPayment = debt * 0.007; // Сумма платежа по долгу
+      const penaltyPayment = creditAmount * 0.003; // Сумма пеня
+
+      // Обновление долга
+      setDebt((prevDebt) => Math.max(prevDebt - debtPayment, 0));
+      
+      // Вычет платежа из баланса
+      setBalance((currentBalance) => currentBalance - debtPayment - penaltyPayment);
+
+      // Если долг погашен, останавливаем интервал
+      if (debt - debtPayment <= 0) {
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    // Очистка интервала при размонтировании компонента
+    return () => clearInterval(interval);
+  }
+}, [debt, creditAmount, setBalance]);
+
+const takeCredit = (income) => {
+
+  if (debt > 0) {
+    alert('Вы ещё не выплатили предыдущий кредит!');
+    return;
+  }
+  
+  const amount = prompt('Введите сумму кредита (максимум 1,000,000):');
+  
+  // Если пользователь нажал "Отмена" в prompt
+  if (amount === null) {
+    alert('Ввод отменен.');
+    return;
+  }
+
+  const credit = parseFloat(amount);
+  const maxCredit = Math.min(1000000, income * 200); // Максимум либо 1,000,000, либо в 200 раз больше дохода
+
+  // Проверяем, что введено число и оно не превышает максимально допустимый кредит
+  if (!isNaN(credit) && credit > 0 && credit <= maxCredit) {
+    setCreditAmount(credit);
+    setDebt(credit);
+    setPayment(credit * 0.01); // Установка начального ежесекундного платежа
+    setBalance(currentBalance => currentBalance + credit); // Начисляем кредит на баланс
+  } else if (credit > maxCredit) {
+    alert(`Сумма кредита не может превышать ${maxCredit}.`);
+  } else {
+    alert('Пожалуйста, введите валидную сумму.');
+  }
+};
+
 // Эффект для начисления налогов
 useEffect(() => {
   const handleTaxCalculation = () => {
@@ -330,8 +426,11 @@ const payTaxes = () => {
 };
 
   const convertBalanceToGreenCrystals = () => {
-    const conversionRate = 1000000; // Курс обмена
+    const conversionRate = 10000; // Курс обмена
     const newGreenCrystals = balance / conversionRate;
+    if (debt > 0) {
+      alert ('You cant make convertation until your debt is exist!')
+    }
     setGreenCrystals(currentGreenCrystals => currentGreenCrystals + newGreenCrystals);
     setBalance(0); // Обнуляем balance после конвертации
     // Предполагается, что balance полностью конвертируется в greenCrystals
@@ -383,6 +482,10 @@ const payTaxes = () => {
         alert('Your taxes are too high, please pay before purchasing a location!');
         return; // Exit the function early if taxes are too high
       }
+      if (debt > 0) {
+        alert('Please pay your credit before purchasing a loaction!');
+        return;
+      }
       setGreenCrystals(currentGreenCrystals => currentGreenCrystals - cost);
       setPurchasedLocations(prevLocations => {
         const updatedLocations = { ...prevLocations, [id]: true };
@@ -413,7 +516,6 @@ const payTaxes = () => {
   });
   //first bussiness
   
-  
   const [upgradeCost, setUpgradeCost] = useState(() => Number(localStorage.getItem('upgradeCost')) || 10);
   const [upgradeCount, setUpgradeCount] = useState(() => Number(localStorage.getItem('upgradeCount')) || 0);
 
@@ -435,6 +537,11 @@ const payTaxes = () => {
   useEffect(() => {
     // Сохранение текущего состояния в localStorage
     const saveState = () => {
+      localStorage.setItem('researchCost', researchCost.toString());
+      localStorage.setItem('creditAmount', creditAmount.toString());
+      localStorage.setItem('debt', debt.toString());
+      localStorage.setItem('payment', payment.toString());
+
       localStorage.setItem('sciencePoints', sciencePoints.toString());
 
       localStorage.setItem('firstBusinessMultiplier', firstBusinessMultiplier.toString());
@@ -464,7 +571,7 @@ const payTaxes = () => {
 
     // Вызов сохранения состояния при изменении любого из состояний
     saveState();
-  }, [balance, income, upgradeCost, upgradeCount, taxes, secondWindowUnlocked, secondIncome, sciencePoints, secUpgradeCost, secUpgradeCount, thirdWindowUnlocked, thirdIncome, thirdUpgradeCost, thirdUpgradeCount, greenCrystals, purchasedLocations, purchasedUpgrade, secondBusinessMultiplier, firstBusinessMultiplier, thirdBusinessMultiplier]);
+  }, [balance, income, researchCost, upgradeCost, creditAmount, debt, payment, upgradeCount, taxes, secondWindowUnlocked, secondIncome, sciencePoints, secUpgradeCost, secUpgradeCount, thirdWindowUnlocked, thirdIncome, thirdUpgradeCost, thirdUpgradeCount, greenCrystals, purchasedLocations, purchasedUpgrade, secondBusinessMultiplier, firstBusinessMultiplier, thirdBusinessMultiplier]);
 
     useEffect(() => {
   const interval = setInterval(() => {
@@ -480,34 +587,54 @@ const payTaxes = () => {
 }, [income, firstBusinessMultiplier, secondIncome, secondBusinessMultiplier, thirdIncome, thirdBusinessMultiplier]);
 
     const purshcaseUpgrade = () => {
-      const isFifthUpgrade = (upgradeCount + 1) % 5 === 0; // Проверяем, является ли это пятым улучшением
-
-  if (balance >= upgradeCost && (!isFifthUpgrade || (isFifthUpgrade && sciencePoints > 0))) {
-    setIncome(currentIncome => currentIncome * 1.5); // Увеличиваем доход
-    setBalance(currentBalance => currentBalance - upgradeCost); // Уменьшаем баланс на стоимость улучшения
-    setUpgradeCount(upgradeCount => upgradeCount + 1); // Увеличиваем счётчик улучшений
-
-    setUpgradeCost(currentCost => currentCost * 2); // Увеличиваем стоимость следующего улучшения
-
-    if (isFifthUpgrade) {
-      // Если это пятое улучшение, уменьшаем количество очков науки
-      setSciencePoints(currentPoints => currentPoints - 1);
-      setIncome(currentIncome => currentIncome * 1.2); // Дополнительное увеличение дохода
-    }
-
-    if ((upgradeCount + 1) % 10 === 0) {
-      // Каждое десятое улучшение увеличиваем доход еще больше
-      setIncome(currentIncome => currentIncome * 1.3);
-    }
-  } else {
-    // Если средств недостаточно или не хватает очков науки для пятого улучшения
-    let errorMessage = "Balance not enough!";
-    if (isFifthUpgrade && sciencePoints === 0) {
-      errorMessage = "Not enough science points  for this upgrade!";
-    }
-    alert(errorMessage);
-  }
-};
+        const isFifthUpgrade = (upgradeCount + 1) % 5 === 0;
+        const isTenthUpgrade = (upgradeCount + 1) % 10 === 0;
+    
+        if (balance >= upgradeCost) {
+            // Рассчитываем фактор увеличения дохода в зависимости от номера улучшения
+            let baseIncrement = 1.1; // Базовое увеличение на 10%
+            let additionalIncrement = (upgradeCount % 5) * 0.02; // Дополнительное увеличение на 2% за каждый уровень в текущем цикле пяти улучшений
+            let incrementFactor = baseIncrement + additionalIncrement;
+    
+            // Увеличиваем доход
+            setIncome(currentIncome => currentIncome * incrementFactor);
+    
+            // Уменьшаем баланс на стоимость улучшения
+            setBalance(currentBalance => currentBalance - upgradeCost);
+    
+            // Увеличиваем счётчик улучшений
+            setUpgradeCount(currentCount => currentCount + 1);
+    
+            // Увеличиваем стоимость следующего улучшения
+            let costMultiplier = 1.2 + (isFifthUpgrade ? 0.1 : 0); // Основное увеличение на 20%, дополнительное на 10% каждое пятое улучшение
+            setUpgradeCost(currentCost => currentCost * costMultiplier);
+    
+            if (isFifthUpgrade) {
+                if (sciencePoints > 0) {
+                    // Дополнительное увеличение дохода на 50% на каждом пятом улучшении
+                    setIncome(currentIncome => currentIncome * 1.5);
+                    // Уменьшаем количество очков науки
+                    setSciencePoints(currentPoints => currentPoints - 1);
+                } else {
+                    alert("Not enough science points for this upgrade!");
+                    // Отменяем последнее улучшение, если не хватает научных очков
+                    setIncome(currentIncome => currentIncome / incrementFactor);
+                    setBalance(currentBalance => currentBalance + upgradeCost);
+                    setUpgradeCount(currentCount => currentCount - 1);
+                    setUpgradeCost(currentCost => currentCost / costMultiplier);
+                    return;
+                }
+            }
+    
+            if (isTenthUpgrade) {
+                // Удвоение дохода на каждом десятом улучшении
+                setIncome(currentIncome => currentIncome * 2);
+            }
+    
+        } else {
+            alert("Not enough balance for this upgrade!");
+        }
+    };
 
     const unlockSecondWindow = () => {
       
@@ -532,67 +659,87 @@ const payTaxes = () => {
     };
      
     const secPurshcaseUpgrade = () => {
-      const isFifthUpgrade = (secUpgradeCount + 1) % 5 === 0; // Проверяем, является ли это пятым улучшением
+      const isFifthUpgrade = (secUpgradeCount + 1) % 5 === 0;
+      const isTenthUpgrade = (secUpgradeCount + 1) % 10 === 0;
 
       if (balance >= secUpgradeCost && (!isFifthUpgrade || (isFifthUpgrade && sciencePoints > 0))) {
-        setSecondIncome(currentsecondIncome => currentsecondIncome * 1.7 + 10);
+        let baseSecIncrement = 1.3; // Базовое увеличение на 10%
+            let additionalSecIncrement = (secUpgradeCount % 5) * 0.02; // Дополнительное увеличение на 2% за каждый уровень в текущем цикле пяти улучшений
+            let incrementSecFactor = baseSecIncrement + additionalSecIncrement;
+
+        setSecondIncome(currentsecondIncome => currentsecondIncome * incrementSecFactor + 10)
         setBalance(prevBalance => prevBalance - secUpgradeCost);
         setSecUpgradeCount(secUpgradeCount + 1);
 
-        setSecUpgradeCost(currentsecCost => currentsecCost * 2.5);
-        if ((secUpgradeCount + 1) % 5 === 0){
-          setSecondIncome(currentsecondIncome => currentsecondIncome * 1.25)
-        }
-        if ((secUpgradeCount + 1) % 10 === 0){
-          setSecondIncome(currentsecondIncome => currentsecondIncome * 1.5) && setSecUpgradeCost(currentsecCost => currentsecCost * 1.25);
-        }
-        if ((secUpgradeCount + 1) % 100 === 0){
-          setSecondIncome(currentsecondIncome => currentsecondIncome * 1.5);
-        }
+        let costSecMultiplier = 1.2 + (isFifthUpgrade ? 0.1 : 0); // Основное увеличение на 20%, дополнительное на 10% каждое пятое улучшение
+            setSecUpgradeCost(currentsecCost => currentsecCost * costSecMultiplier);
+            
+
         if (isFifthUpgrade) {
+          if (sciencePoints > 0) {
           // Если это пятое улучшение, уменьшаем количество очков науки
           setSciencePoints(currentPoints => currentPoints - 1);
-          setIncome(currentIncome => currentIncome * 1.2); // Дополнительное увеличение дохода
+          setSecondIncome(currentsecondIncome => currentsecondIncome * 1.7); // Дополнительное увеличение дохода
+        } else {
+          alert("Not enough science points for this upgrade!");
+                    // Отменяем последнее улучшение, если не хватает научных очков
+                    setSecondIncome(currentsecondIncome => currentsecondIncome / incrementSecFactor);
+                    setBalance(currentBalance => currentBalance + secUpgradeCost);
+                    setSecUpgradeCount(currentsecUpgradeCount => currentsecUpgradeCount - 1);
+                    setSecUpgradeCost(currentsecCost => currentsecCost / costSecMultiplier);
+                    return;
         }
+      }
+
+        if (isTenthUpgrade) {
+          // Удвоение дохода на каждом десятом улучшении
+          setSecondIncome(currentsecondIncome => currentsecondIncome * 1.8);
+      }
     } else {
-      let errorMessage = "Balance not enough!";
-      if (isFifthUpgrade && sciencePoints === 0) {
-      errorMessage = "Not enough science points  for this upgrade!";
-    }
-    alert(errorMessage);
+      alert("Not enough balance for this upgrade!");
     }
   };
 
   const thirdPurshcaseUpgrade = () => {
 
-    const isFifthUpgrade = (thirdUpgradeCost + 1) % 5 === 0; // Проверяем, является ли это пятым улучшением
+      const isFifthUpgrade = (thirdUpgradeCount + 1) % 5 === 0;
+      const isTenthUpgrade = (thirdUpgradeCount + 1) % 10 === 0;
 
       if (balance >= thirdUpgradeCost && (!isFifthUpgrade || (isFifthUpgrade && sciencePoints > 0))) {
-      setThirdIncome(currentthirdIncome => currentthirdIncome * 2 + 100);
-      setBalance(prevBalance => prevBalance - thirdUpgradeCost);
-      setThirdUpgradeCount(thirdUpgradeCount + 1);
+        let baseThirdIncrement = 1.3; // Базовое увеличение на 10%
+            let additionalThirdIncrement = (thirdUpgradeCount % 5) * 0.02; // Дополнительное увеличение на 2% за каждый уровень в текущем цикле пяти улучшений
+            let incrementThirdFactor = baseThirdIncrement + additionalThirdIncrement;
 
-      setThirdUpgradeCost(currentthirdCost => currentthirdCost * 3);
-      if ((thirdUpgradeCount + 1) % 5 === 0){
-        setThirdIncome(currentthirdIncome => currentthirdIncome * 1.5)
+        setThirdIncome(currentthirdIncome => currentthirdIncome * incrementThirdFactor + 100)
+        setBalance(prevBalance => prevBalance - thirdUpgradeCost);
+        setThirdUpgradeCount(thirdUpgradeCount + 1);
+
+        let costThirdMultiplier = 1.5 + (isFifthUpgrade ? 0.2 : 0); // Основное увеличение на 20%, дополнительное на 10% каждое пятое улучшение
+            setThirdUpgradeCost(currentthirdCost => currentthirdCost * costThirdMultiplier);
+            
+
+        if (isFifthUpgrade) {
+          if (sciencePoints > 0) {
+          // Если это пятое улучшение, уменьшаем количество очков науки
+          setSciencePoints(currentPoints => currentPoints - 1);
+          setThirdIncome(currentthirdIncome => currentthirdIncome * 2); // Дополнительное увеличение дохода
+        } else {
+          alert("Not enough science points for this upgrade!");
+                    // Отменяем последнее улучшение, если не хватает научных очков
+                    setThirdIncome(currentthirdIncome => currentthirdIncome / incrementThirdFactor);
+                    setBalance(currentBalance => currentBalance + thirdUpgradeCost);
+                    setThirdUpgradeCount(currentthirdUpgradeCount => currentthirdUpgradeCount - 1);
+                    setThirdUpgradeCost(currentthirdCost => currentthirdCost / costThirdMultiplier);
+                    return;
+        }
       }
-      if ((secUpgradeCount + 1) % 10 === 0){
-        setThirdIncome(currentthirdIncome => currentthirdIncome * 1.5) && setSecUpgradeCost(currentsecCost => currentsecCost * 1.5);
+
+        if (isTenthUpgrade) {
+          // Удвоение дохода на каждом десятом улучшении
+          setThirdIncome(currentthirdIncome => currentthirdIncome * 2);
       }
-      if ((secUpgradeCount + 1) % 100 === 0){
-        setThirdIncome(currentthirdIncome => currentthirdIncome * 1.5);
-      }
-      if (isFifthUpgrade) {
-        // Если это пятое улучшение, уменьшаем количество очков науки
-        setSciencePoints(currentPoints => currentPoints - 1);
-        setIncome(currentIncome => currentIncome * 1.2); // Дополнительное увеличение дохода
-      }
-  } else {
-    let errorMessage = "Balance not enough!";
-      if (isFifthUpgrade && sciencePoints === 0) {
-      errorMessage = "Not enough science points  for this upgrade!";
-    }
-    alert(errorMessage);
+    } else {
+      alert("Not enough balance for this upgrade!");
     }
   }
 
@@ -625,39 +772,56 @@ const payTaxes = () => {
 </div>
         
         
-        {isLabOpen && (
-          <div className="absolute right-0 mt-5 top-14 mr-4 bg-gray-700 p-5 rounded-lg shadow-lg" style={{ zIndex: 100, maxHeight: '500px', overflowY: 'auto', width: '400px', backgroundImage: `url(${backgroundImage})` }}>
-            <h2 className="text-xl mb-2">Лаборатория</h2>
-            <p className='mb-2'>{sciencePoints}🧪</p>
-            <button
-  onClick={startResearch}
-  disabled={isResearching}
-  className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
->
-  {isResearching ? `Идет исследование ${researchTimeLeft.toFixed(0)} сек` : 'Начать исследование'}
-</button>
-          </div>
-        )}
+{isLabOpen && (
+    <div className="absolute right-0 mt-5 top-14 mr-4 bg-gray-700 p-5 rounded-lg shadow-lg" style={{ zIndex: 100, maxHeight: '500px', overflowY: 'auto', width: '400px', backgroundImage: `url(${backgroundImage})` }}>
+      <h2 className="text-xl mb-2">Лаборатория</h2>
+      <p className='mb-2'>{sciencePoints}🧪</p>
+      <button
+        onClick={startResearch}
+        disabled={isResearching}
+        className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+      >
+        {isResearching ? `Идет исследование ${researchTimeLeft.toFixed(0)} сек` : `Начать исследование за $${researchCost}`}
+      </button>
+    </div>
+  )}
 
   {isMenuOpen && (
-  <div className="absolute z-10 p-5 bg-gray-600 rounded shadow-lg ml-2" style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px`, backgroundImage: `url(${backgroundImageRev})`}} >
+  <div className="absolute z-10 p-5 bg-gray-600 rounded shadow-lg ml-2" style={{ width: `300px`, top: `${menuPosition.top}px`, left: `${menuPosition.left}px`, backgroundImage: `url(${backgroundImageRev})`}} >
     <h2 className="text-xl mb-2 mt-2">Меню</h2>
-      <div className="bg-gray-600 p-5 rounded shadow-xl">
+      <div className="bg-gray-600 p-3 rounded shadow-xl">
         <p>Налоги: ${taxes.toFixed(2)}</p>
         <button
-          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded my-2"
+          className=" bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded my-2"
           onClick={payTaxes}
         >
           Оплатить налоги
         </button>
         {/* ...Контент для раздела Имущество... */}
-        <button
+      </div>
+      <button
+          className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded my-2"
+          onClick={() => takeCredit(income)}
+        >
+          Взять кредит
+        </button>
+        {debt > 0 && (
+          <div className="text-red-500">
+            <p>Долг: ${debt.toFixed(2)}</p>
+            <p>Платеж: ${payment.toFixed(2)} / сек</p>
+          </div>
+        )}
+     <div className='flex justify-center'>
+      <RundomButton setBalance={setBalance} income={income} firstBusinessMultiplier={firstBusinessMultiplier} />
+</div>
+      <div className="flex justify-center mt-3">
+      <button
           className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded ml-2"
           onClick={toggleMenu}
         >
           Закрыть
         </button>
-      </div>
+        </div>
     </div>
   )}
 
