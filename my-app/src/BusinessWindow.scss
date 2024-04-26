@@ -1,0 +1,21 @@
+// BusinessWindow.scss
+@import 'variables';
+
+.canvas-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+
+
+
+.business-window {
+  background: $primary-color;
+  // и так далее...
+}

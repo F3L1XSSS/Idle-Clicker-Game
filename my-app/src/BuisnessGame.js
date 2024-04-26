@@ -6,6 +6,8 @@ import greenCrystal from './Photo/greenCrystal.png'
 import backgroundImageRev from './Photo/FoneRev.png'
 import menuIcon from './Photo/menuIcon.png'
 import RundomButton from './Component/RandomEvent'
+import CanvasContainer from './Component/CanvasContainer';
+import './BusinessWindow.scss'
 
 const BusinessWindow = ({
   name,
@@ -342,28 +344,44 @@ const [payment, setPayment] = useState(() => Number(localStorage.getItem('paymen
 
 useEffect(() => {
   let interval;
-  if (debt > 0) {
+  if (debt > 0 && payment > 0) {
     interval = setInterval(() => {
-      // Расчет платежа и пени
-      const debtPayment = debt * 0.007; // Сумма платежа по долгу
-      const penaltyPayment = creditAmount * 0.003; // Сумма пеня
+      setDebt((prevDebt) => {
+        const penalty = payment * 0.5; // 50% пеня от ежесекундного платежа
+        const totalPayment = payment + penalty;
 
-      // Обновление долга
-      setDebt((prevDebt) => Math.max(prevDebt - debtPayment, 0));
-      
-      // Вычет платежа из баланса
-      setBalance((currentBalance) => currentBalance - debtPayment - penaltyPayment);
+        setBalance((prevBalance) => {
+          if (prevBalance >= totalPayment) {
+            // Если средств достаточно для оплаты кредита и пени
+            const newBalance = prevBalance - totalPayment;
+            localStorage.setItem('balance', newBalance.toString());
+            return newBalance;
+          } else {
+            // Если средств недостаточно
+            alert('Недостаточно средств для оплаты кредита и пени');
+            clearInterval(interval);
+            return prevBalance; // Возвращаем предыдущий баланс
+          }
+        });
 
-      // Если долг погашен, останавливаем интервал
-      if (debt - debtPayment <= 0) {
-        clearInterval(interval);
-      }
+        const newDebt = prevDebt - payment;
+        if (newDebt <= 0) {
+          clearInterval(interval);
+          setCreditAmount(0);
+          setPayment(0);
+        }
+
+        localStorage.setItem('debt', Math.max(newDebt, 0).toString());
+        return Math.max(newDebt, 0);
+      });
     }, 1000);
-
-    // Очистка интервала при размонтировании компонента
-    return () => clearInterval(interval);
   }
-}, [debt, creditAmount, setBalance]);
+
+  // Очистка интервала при размонтировании компонента
+  return () => clearInterval(interval);
+}, [debt, payment]);
+
+
 
 const takeCredit = (income) => {
 
@@ -371,7 +389,7 @@ const takeCredit = (income) => {
     alert('Вы ещё не выплатили предыдущий кредит!');
     return;
   }
-  
+
   const amount = prompt('Введите сумму кредита (максимум 1,000,000):');
   
   // Если пользователь нажал "Отмена" в prompt
@@ -385,10 +403,16 @@ const takeCredit = (income) => {
 
   // Проверяем, что введено число и оно не превышает максимально допустимый кредит
   if (!isNaN(credit) && credit > 0 && credit <= maxCredit) {
+    const initialPayment = credit * 0.01; // Фиксированный начальный ежесекундный платеж
+    
     setCreditAmount(credit);
     setDebt(credit);
-    setPayment(credit * 0.01); // Установка начального ежесекундного платежа
+    setPayment(initialPayment); // Сохраняем начальный ежесекундный платеж
     setBalance(currentBalance => currentBalance + credit); // Начисляем кредит на баланс
+    
+    localStorage.setItem('creditAmount', credit.toString());
+    localStorage.setItem('debt', credit.toString());
+    localStorage.setItem('payment', initialPayment.toString());
   } else if (credit > maxCredit) {
     alert(`Сумма кредита не может превышать ${maxCredit}.`);
   } else {
@@ -743,10 +767,16 @@ const payTaxes = () => {
     }
   }
 
+  const calculatedPenalty = payment * 0.5;
+
+  const totalPayment = Number(payment.toFixed(0)) + calculatedPenalty;
+
+
     return (
       <>
+      <CanvasContainer />
+      <div className="content-container" style={{ position: 'relative'}}>
       <div style={{ backgroundImage: `url(${backgroundImage})` }} className=" relative min-h-screen bg-gray-800 text-white flex flex-col items-center justify-center">
-
       <div className="absolute top-0 left-0 m-4 z-50">
   <button className="p-2" onClick={toggleMenu}>
     {/* Иконка гамбургера */}
@@ -759,7 +789,7 @@ const payTaxes = () => {
 </div>
 
 {/* Контейнер для кнопок 'Магазин', 'Лаборатория', и звука */}
-<div className="absolute top-0 right-0 m-4 flex items-center space-x-2 z-50">
+<div className="absolute top-0 right-0 m-4 flex items-center space-x-2 z-50" style={{zIndex: 10}}>
   <button onClick={toggleStore} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
     Магазин
   </button>
@@ -808,7 +838,7 @@ const payTaxes = () => {
         {debt > 0 && (
           <div className="text-red-500">
             <p>Долг: ${debt.toFixed(2)}</p>
-            <p>Платеж: ${payment.toFixed(2)} / сек</p>
+            <p>Платеж: {totalPayment.toFixed(2)} / сек</p>
           </div>
         )}
      <div className='flex justify-center'>
@@ -863,10 +893,10 @@ const payTaxes = () => {
 
     </div>
 )}
-      <button onClick={resetGame} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110">Start Over</button>
-      <h1 className="text-4xl font-bold mb-6">Business Game</h1>
-      <p className="text-xl mb-2">Balance: <span className="font-bold">${convertNumberToShortForm(balance.toFixed(2))}</span></p>
-      <div className="flex flex-wrap justify-center gap-4">
+      <button onClick={resetGame} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110" style={{zIndex: 10}}>Start Over</button>
+      <h1 className="text-4xl font-bold mb-6" style={{zIndex: 10}}>Business Game</h1>
+      <p className="text-xl mb-2" style={{zIndex: 10}}>Balance: <span className="font-bold">${convertNumberToShortForm(balance.toFixed(2))}</span></p>
+      <div className="flex flex-wrap justify-center gap-4" style={{zIndex: 10}}>
         <BusinessWindow
           name="First Bussiness"
           income={income}
@@ -904,7 +934,7 @@ const payTaxes = () => {
         
       </div>
     </div>
-    
+  </div>
     </>
   );
 };
