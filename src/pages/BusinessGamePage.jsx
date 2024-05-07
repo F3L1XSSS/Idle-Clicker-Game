@@ -1,15 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 
-import Location from '../components/Location';
+import ModalStore from '../components/ModalStore';
 import RundomButton from '../components/RandomEventButton';
 import CanvasContainer from '../components/CanvasContainer';
 import BusinessWindow from '../components/BusinessWindow';
 import backgroundMusic from '../audio/please-calm-my-mind-125566.mp3';
 import backgroundImage from '../images/fone.webp';
-import greenCrystal from '../images/greenCrystal.png';
 import backgroundImageRev from '../images/foneRev.png';
 import menuIcon from '../images/menuIcon.png';
-import { totalUpgrade } from '../constants/totalUpgrade';
 
 const BusinessGamePage = () => {
   const [balance, setBalance] = useState(() => Number(localStorage.getItem('balance')) || 0);
@@ -126,6 +124,7 @@ const BusinessGamePage = () => {
       setIsResearching(false);
       localStorage.removeItem('researchEndTime');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Отображение лаборатории
@@ -139,6 +138,7 @@ const BusinessGamePage = () => {
   const audioRef = useRef(new Audio(backgroundMusic));
 
   useEffect(() => {
+    const audio = audioRef.current;
     // Управление воспроизведением музыки должно происходить только при изменении isPlaying
     if (isPlaying) {
       // Проигрываем музыку, если isPlaying === true
@@ -150,15 +150,15 @@ const BusinessGamePage = () => {
       }
     } else {
       // Останавливаем музыку, если isPlaying === false
-      audioRef.current.pause();
+      audio.pause();
     }
 
     // Устанавливаем loop здесь, чтобы гарантировать, что оно применяется после play
-    audioRef.current.loop = true;
+    audio.loop = true;
 
     // Очистка только происходит при размонтировании компонента
     return () => {
-      audioRef.current.pause();
+      audio.pause();
     };
   }, [isPlaying]); // Убедитесь, что у вас есть isPlaying в массиве зависимостей
 
@@ -190,46 +190,6 @@ const BusinessGamePage = () => {
     return processedNumber.toFixed(2) + suffix;
   }
 
-  const TotalUpgrade = ({ id, totname, totcost, totOnPurshcase, totPurchcased }) => {
-    const [isButtonDisabled, setIsButtonDisabled] = useState(false);
-
-    const handlePurchase = () => {
-      // Если покупка успешна, деактивируем кнопку
-      if (totOnPurshcase(id, totcost)) {
-        setIsButtonDisabled(true);
-      }
-    };
-
-    return (
-      <>
-        <div key={id} className="bg-gray-600 p-4 rounded-lg shadow-inner mt-2">
-          <h3 className="text-lg">{totname}</h3>
-          <p>Стоимость: {totcost} $</p>
-          <p>Effect: income x2</p>
-          {!totPurchcased && (
-            <button
-              onClick={handlePurchase}
-              disabled={isButtonDisabled}
-              className={`bg-blue-500 text-white font-bold py-2 px-4 rounded mt-3 ${
-                isButtonDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
-              }`}
-            >
-              Купить
-            </button>
-          )}
-          {totPurchcased && (
-            <button
-              disabled={true}
-              className="bg-green-500 text-white font-bold py-2 px-4 rounded mt-3 opacity-50 cursor-not-allowed"
-            >
-              Куплено
-            </button>
-          )}
-        </div>
-      </>
-    );
-  };
-
   const [isStoreOpen, setIsStoreOpen] = useState(false);
 
   const toggleStore = () => {
@@ -250,10 +210,6 @@ const BusinessGamePage = () => {
     const savedMultiplier = localStorage.getItem('thirdBusinessMultiplier');
     return savedMultiplier ? Number(savedMultiplier) : 1;
   });
-  const locations = [
-    { id: 1, name: 'Desert', cost: 1000 },
-    // Добавьте здесь больше локаций по мере необходимости
-  ];
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [taxes, setTaxes] = useState(() => Number(localStorage.getItem('taxes')) || 0);
@@ -876,55 +832,18 @@ const BusinessGamePage = () => {
           )}
 
           {isStoreOpen && (
-            <div
-              style={{
-                zIndex: 100,
-                maxHeight: '500px',
-                overflowY: 'auto',
-                width: '400px',
-                backgroundImage: `url(${backgroundImage})`,
-              }}
-              className="bg-gray-700 p-5 rounded-lg shadow-lg mt-5 absolute right-0 top-14 mr-4"
-            >
-              <h2 className="text-xl mb-4">Магазин локаций</h2>
-              <div className="flex items-center mb-4">
-                <img src={greenCrystal} alt="Green Crystal" className="inline-block h-6 w-6" />{' '}
-                <span className="font-bold">{greenCrystals.toFixed(4)}</span>
-              </div>
-              <button
-                onClick={convertBalanceToGreenCrystals}
-                className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110 mb-4"
-              >
-                Конвертировать баланс в{' '}
-                <img src={greenCrystal} alt="Green Crystal" className="inline-block h-6 w-6" />
-              </button>
-              {locations.map(location => (
-                <Location
-                  key={location.id}
-                  id={location.id}
-                  name={location.name}
-                  cost={location.cost}
-                  purchased={!!purchasedLocations[location.id]}
-                  onPurchase={purchaseLocation}
-                />
-              ))}
-
-              <div className="mt-8 mb-4">
-                <h2 className="text-xl font-bold">Upgrades</h2>
-              </div>
-
-              {totalUpgrade.map(totalUpgradeItem => (
-                <TotalUpgrade
-                  key={totalUpgradeItem.id}
-                  id={totalUpgradeItem.id}
-                  totname={totalUpgradeItem.totname}
-                  totcost={totalUpgradeItem.totcost}
-                  totPurchcased={!!purchasedUpgrade[totalUpgradeItem.id]}
-                  totOnPurshcase={purchaseUpgrade}
-                />
-              ))}
-            </div>
+            <ModalStore
+              greenCrystals={greenCrystals}
+              convertBalanceToGreenCrystals={convertBalanceToGreenCrystals}
+              purchasedLocations={purchasedLocations}
+              purchaseLocation={purchaseLocation}
+              purchasedUpgrade={purchasedUpgrade}
+              purchaseUpgrade={purchaseUpgrade}
+              toggleStore={toggleStore}
+              isShowing={isStoreOpen}
+            />
           )}
+
           <button
             onClick={resetGame}
             className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110"
