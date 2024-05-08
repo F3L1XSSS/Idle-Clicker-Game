@@ -1,0 +1,15 @@
+/* Стилизация ползунка скроллбара */
+::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.4); /* Цвет ползунка */
+  border-radius: 5px; /* Закругление углов ползунка */
+}
+
+/* Стилизация скроллбара */
+::-webkit-scrollbar {
+  width: 10px; /* Ширина скроллбара */
+}
+
+/* Подложка скроллбара */
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.5); /* Цвет подложки */
+}
