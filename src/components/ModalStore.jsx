@@ -52,7 +52,7 @@ const ModalStore = ({
           </div>
           <button
             onClick={convertBalanceToGreenCrystals}
-            className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform mb-4"
+            className="bg-purple-500 hover:bg-purple-700 text-white font-bold mb-4 py-2 px-4 rounded transition duration-300 ease-in-out"
           >
             Конвертировать баланс в{' '}
             <img src={greenCrystal} alt="Green Crystal" className="inline-block h-6 w-6" />

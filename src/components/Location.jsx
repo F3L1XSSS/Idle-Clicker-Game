@@ -20,14 +20,14 @@ const Location = ({ id, name, cost, onPurchase, purchased }) => {
         {!purchased ? (
           <button
             onClick={() => onPurchase(id, cost)}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-3"
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-3 transition duration-300 ease-in-out"
           >
             Купить
           </button>
         ) : (
           <button
             onClick={handleNavigate}
-            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-3"
+            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-3 transition duration-300 ease-in-out"
           >
             Перейти
           </button>

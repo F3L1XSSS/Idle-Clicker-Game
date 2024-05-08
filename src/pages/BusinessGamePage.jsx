@@ -8,6 +8,7 @@ import backgroundMusic from '../audio/please-calm-my-mind-125566.mp3';
 import backgroundImage from '../images/fone.webp';
 import backgroundImageRev from '../images/foneRev.png';
 import menuIcon from '../images/menuIcon.png';
+import ModalLaboratory from '../components/ModalLaboratory';
 
 const BusinessGamePage = () => {
   const [balance, setBalance] = useState(() => Number(localStorage.getItem('balance')) || 0);
@@ -737,13 +738,13 @@ const BusinessGamePage = () => {
           >
             <button
               onClick={toggleStore}
-              className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+              className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-all ease-in-out duration-300"
             >
               Магазин
             </button>
             <button
               onClick={toggleLab}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-all ease-in-out duration-300"
             >
               Лаборатория
             </button>
@@ -756,28 +757,15 @@ const BusinessGamePage = () => {
           </div>
 
           {isLabOpen && (
-            <div
-              className="absolute right-0 mt-5 top-14 mr-4 bg-gray-700 p-5 rounded-lg shadow-lg"
-              style={{
-                zIndex: 100,
-                maxHeight: '500px',
-                overflowY: 'auto',
-                width: '400px',
-                backgroundImage: `url(${backgroundImage})`,
-              }}
-            >
-              <h2 className="text-xl mb-2">Лаборатория</h2>
-              <p className="mb-2">{sciencePoints}🧪</p>
-              <button
-                onClick={startResearch}
-                disabled={isResearching}
-                className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
-              >
-                {isResearching
-                  ? `Идет исследование ${researchTimeLeft.toFixed(0)} сек`
-                  : `Начать исследование за $${researchCost}`}
-              </button>
-            </div>
+            <ModalLaboratory
+              isShowing={isLabOpen}
+              toggleLab={toggleLab}
+              sciencePoints={sciencePoints}
+              startResearch={startResearch}
+              isResearching={isResearching}
+              researchTimeLeft={researchTimeLeft}
+              researchCost={researchCost}
+            />
           )}
 
           {isMenuOpen && (

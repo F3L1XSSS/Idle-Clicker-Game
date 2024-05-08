@@ -22,7 +22,7 @@ const TotalUpgrade = ({ id, totname, totcost, totOnPurshcase, totPurchcased }) =
             disabled={isButtonDisabled}
             className={`bg-blue-500 text-white font-bold py-2 px-4 rounded mt-3 ${
               isButtonDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
-            }`}
+            } transition duration-300 ease-in-out`}
           >
             Купить
           </button>
