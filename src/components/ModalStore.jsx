@@ -2,7 +2,7 @@ import { locations } from '../constants/locations';
 import { totalUpgrade } from '../constants/totalUpgrade';
 import Location from '../components/Location';
 import TotalUpgrade from './TotalUpgrade';
-import Modal from './Common/Modal/Modal';
+import Modal from './Common/Modal';
 import backgroundImage from '../images/fone.webp';
 import greenCrystal from '../images/greenCrystal.png';
 

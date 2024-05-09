@@ -1,27 +1,13 @@
-import backgroundImage from '../images/fone.webp';
 import Modal from './Common/Modal';
 
-const ModalLaboratory = ({
-  toggleLab,
-  isShowing,
-  sciencePoints,
-  startResearch,
-  isResearching,
-  researchTimeLeft,
-  researchCost,
-}) => {
+const ModalRandomEvent = ({ isShowing, toggleModal, message }) => {
   return (
-    <Modal isShowing={isShowing} toggle={toggleLab}>
-      <div
-        style={{
-          backgroundImage: `url(${backgroundImage})`,
-        }}
-        className="absolute right-0 w-[400px] mt-[10px] bg-gray-700 p-5 rounded-tl-lg rounded-bl-lg shadow-lg overflow-y-auto"
-      >
+    <Modal isShowing={isShowing} toggle={toggleModal}>
+      <div className="absolute w-[400px] mt-[10px] p-5 rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 bg-black border border-white">
         <div className="relative">
-          <h2 className="text-xl mb-4">Лаборатория</h2>
+          <h2 className="text-xl mb-4">Событие</h2>
           <button
-            onClick={toggleLab}
+            onClick={toggleModal}
             className="absolute  right-2 bottom-0 transition-all ease-in-out hover:scale-110 duration-300"
           >
             <svg
@@ -37,19 +23,10 @@ const ModalLaboratory = ({
           </button>
         </div>
 
-        <p className="mb-2">{sciencePoints}🧪</p>
-        <button
-          onClick={startResearch}
-          disabled={isResearching}
-          className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out"
-        >
-          {isResearching
-            ? `Идет исследование ${researchTimeLeft.toFixed(0)} сек`
-            : `Начать исследование за $${researchCost}`}
-        </button>
+        <p>{message}</p>
       </div>
     </Modal>
   );
 };
 
-export default ModalLaboratory;
+export default ModalRandomEvent;
