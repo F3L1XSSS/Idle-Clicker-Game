@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 
-const RandomEventButton = ({ setBalance, income, firstBusinessMultiplier }) => {
-  // Инициализация таймера из localStorage или установка по умолчанию в 600 секунд
-  const [timer, setTimer] = useState(() => {
-    const savedTimer = localStorage.getItem('timer');
-    return savedTimer ? Number(savedTimer) : 600;
-  });
+const RandomEventButton = ({
+  setBalance,
+  income,
+  firstBusinessMultiplier,
+  timer,
+  setTimer,
+  setIsModalRandomEventOpen,
+  setModalMessage,
+}) => {
   const [isButtonDisabled, setIsButtonDisabled] = useState(timer !== 600);
 
   useEffect(() => {
@@ -29,10 +32,12 @@ const RandomEventButton = ({ setBalance, income, firstBusinessMultiplier }) => {
       // Очистка интервала при размонтировании компонента
       return () => clearInterval(interval);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isButtonDisabled]);
+
   const handleRandomEvent = () => {
     setIsButtonDisabled(true); // Отключить кнопку
-    setIsButtonDisabled(true);
+
     // Определяем события и их вероятности
     const events = [
       { type: 'reset', probability: 0.1 }, // 10% шанс
@@ -58,19 +63,27 @@ const RandomEventButton = ({ setBalance, income, firstBusinessMultiplier }) => {
         switch (event.type) {
           case 'reset':
             setBalance(0);
-            alert('The stock market has fallen, your balance has disappeared! :(');
+            setModalMessage('The stock market has fallen, your balance has disappeared! :(');
+            setIsModalRandomEventOpen(true);
             return;
           case 'hourIncome':
             setBalance(currentBalance => currentBalance + hourIncome);
-            alert(`Good news! You've earned an extra hour's income: $${hourIncome.toFixed(2)}`);
+            setModalMessage(
+              `Good news! You've earned an extra hour's income: $${hourIncome.toFixed(2)}`
+            );
+            setIsModalRandomEventOpen(true);
             return;
           case 'tenIncome':
             setBalance(currentBalance => currentBalance + tenIncome);
-            alert(`Good news! You've earned an extra 10 minutes' income: $${tenIncome.toFixed(2)}`);
+            setModalMessage(
+              `Good news! You've earned an extra 10 minutes' income: $${tenIncome.toFixed(2)}`
+            );
+            setIsModalRandomEventOpen(true);
             return;
           case 'minusTen':
             setBalance(currentBalance => currentBalance - tenIncome);
-            alert(`-10 test: -$${tenIncome.toFixed(2)}`);
+            setModalMessage(`-10 test: -$${tenIncome.toFixed(2)}`);
+            setIsModalRandomEventOpen(true);
             return;
           default:
             // Нет действия для неопределенного события
@@ -81,17 +94,17 @@ const RandomEventButton = ({ setBalance, income, firstBusinessMultiplier }) => {
   };
 
   return (
-    <div>
+    <>
       <button
         onClick={handleRandomEvent}
         disabled={isButtonDisabled}
-        className={` mt-4 py-2 px-4 font-bold rounded ${
+        className={`py-2 px-4 font-bold rounded transition duration-300 ease-in-out ${
           isButtonDisabled ? 'bg-gray-500 text-white' : 'bg-blue-500 hover:bg-blue-700 text-white'
         }`}
       >
         {isButtonDisabled ? `Wait: ${timer} sec` : 'Trigger Random Event'}
       </button>
-    </div>
+    </>
   );
 };
 

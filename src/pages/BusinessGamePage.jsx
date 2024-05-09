@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 import ModalStore from '../components/ModalStore';
-import RundomButton from '../components/RandomEventButton';
+import RandomEventButton from '../components/RandomEventButton';
 import CanvasContainer from '../components/CanvasContainer';
 import BusinessWindow from '../components/BusinessWindow';
 import backgroundMusic from '../audio/please-calm-my-mind-125566.mp3';
@@ -9,6 +9,7 @@ import backgroundImage from '../images/fone.webp';
 import backgroundImageRev from '../images/foneRev.png';
 import menuIcon from '../images/menuIcon.png';
 import ModalLaboratory from '../components/ModalLaboratory';
+import ModalRandomEvent from '../components/ModalRandomEvent';
 
 const BusinessGamePage = () => {
   const [balance, setBalance] = useState(() => Number(localStorage.getItem('balance')) || 0);
@@ -16,6 +17,20 @@ const BusinessGamePage = () => {
     const savedIncome = localStorage.getItem('income');
     return savedIncome ? Number(savedIncome) : 1;
   });
+
+  const [modalMessage, setModalMessage] = useState('');
+  const [isModalRandomEventOpen, setIsModalRandomEventOpen] = useState(false);
+
+  const toggleModalRandomEvent = () => {
+    setIsModalRandomEventOpen(!isModalRandomEventOpen);
+  };
+
+  // Инициализация таймера из localStorage или установка по умолчанию в 600 секунд
+  const [timer, setTimer] = useState(() => {
+    const savedTimer = localStorage.getItem('timer');
+    return savedTimer ? Number(savedTimer) : 600;
+  });
+
   const resetGame = () => {
     if (researchIntervalId !== null) {
       clearInterval(researchIntervalId);
@@ -49,6 +64,8 @@ const BusinessGamePage = () => {
     setFirstBusinessMultiplier(1);
     setSecondBusinessMultiplier(1);
     setThirdBusinessMultiplier(1);
+
+    setTimer(0);
 
     // Очистка localStorage
     localStorage.clear();
@@ -736,6 +753,15 @@ const BusinessGamePage = () => {
             className="absolute top-0 right-0 m-4 flex items-center space-x-2 z-50"
             style={{ zIndex: 10 }}
           >
+            <RandomEventButton
+              timer={timer}
+              setTimer={setTimer}
+              setBalance={setBalance}
+              income={income}
+              firstBusinessMultiplier={firstBusinessMultiplier}
+              setIsModalRandomEventOpen={setIsModalRandomEventOpen}
+              setModalMessage={setModalMessage}
+            />
             <button
               onClick={toggleStore}
               className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-all ease-in-out duration-300"
@@ -755,6 +781,12 @@ const BusinessGamePage = () => {
               {isPlaying ? '🔊' : '🔇'}
             </button>
           </div>
+
+          <ModalRandomEvent
+            isShowing={isModalRandomEventOpen}
+            message={modalMessage}
+            toggleModal={toggleModalRandomEvent}
+          />
 
           {isLabOpen && (
             <ModalLaboratory
@@ -801,13 +833,7 @@ const BusinessGamePage = () => {
                   <p>Платеж: {totalPayment.toFixed(2)} / сек</p>
                 </div>
               )}
-              <div className="flex justify-center">
-                <RundomButton
-                  setBalance={setBalance}
-                  income={income}
-                  firstBusinessMultiplier={firstBusinessMultiplier}
-                />
-              </div>
+
               <div className="flex justify-center mt-3">
                 <button
                   className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded ml-2"
