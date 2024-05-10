@@ -6,10 +6,10 @@ import CanvasContainer from '../components/CanvasContainer';
 import BusinessWindow from '../components/BusinessWindow';
 import backgroundMusic from '../audio/please-calm-my-mind-125566.mp3';
 import backgroundImage from '../images/fone.webp';
-import backgroundImageRev from '../images/foneRev.png';
 import menuIcon from '../images/menuIcon.png';
 import ModalLaboratory from '../components/ModalLaboratory';
 import ModalRandomEvent from '../components/ModalRandomEvent';
+import TaxLoanMenu from '../components/TaxLoanMenu';
 
 const BusinessGamePage = () => {
   const [balance, setBalance] = useState(() => Number(localStorage.getItem('balance')) || 0);
@@ -233,16 +233,16 @@ const BusinessGamePage = () => {
   const [taxes, setTaxes] = useState(() => Number(localStorage.getItem('taxes')) || 0);
 
   // Функция для открытия/закрытия меню
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  // const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
 
   const toggleMenu = event => {
     if (isStoreOpen) setIsStoreOpen(false);
     if (isLabOpen) setIsLabOpen(false);
-    const rect = event.currentTarget.getBoundingClientRect();
-    setMenuPosition({
-      top: rect.bottom + window.scrollY,
-      left: rect.left + window.scrollX,
-    });
+    // const rect = event.currentTarget.getBoundingClientRect();
+    // setMenuPosition({
+    //   top: rect.bottom + window.scrollY,
+    //   left: rect.left + window.scrollX,
+    // });
     setIsMenuOpen(!isMenuOpen);
   };
 
@@ -800,50 +800,16 @@ const BusinessGamePage = () => {
             />
           )}
 
-          {isMenuOpen && (
-            <div
-              className="absolute z-10 p-5 bg-gray-600 rounded shadow-lg ml-2"
-              style={{
-                width: `300px`,
-                top: `${menuPosition.top}px`,
-                left: `${menuPosition.left}px`,
-                backgroundImage: `url(${backgroundImageRev})`,
-              }}
-            >
-              <h2 className="text-xl mb-2 mt-2">Меню</h2>
-              <div className="bg-gray-600 p-3 rounded shadow-xl">
-                <p>Налоги: ${taxes.toFixed(2)}</p>
-                <button
-                  className=" bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded my-2"
-                  onClick={payTaxes}
-                >
-                  Оплатить налоги
-                </button>
-                {/* ...Контент для раздела Имущество... */}
-              </div>
-              <button
-                className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded my-2"
-                onClick={() => takeCredit(income)}
-              >
-                Взять кредит
-              </button>
-              {debt > 0 && (
-                <div className="text-red-500">
-                  <p>Долг: ${debt.toFixed(2)}</p>
-                  <p>Платеж: {totalPayment.toFixed(2)} / сек</p>
-                </div>
-              )}
-
-              <div className="flex justify-center mt-3">
-                <button
-                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded ml-2"
-                  onClick={toggleMenu}
-                >
-                  Закрыть
-                </button>
-              </div>
-            </div>
-          )}
+          <TaxLoanMenu
+            taxes={taxes}
+            payTaxes={payTaxes}
+            takeCredit={takeCredit}
+            income={income}
+            debt={debt}
+            totalPayment={totalPayment}
+            toggleMenu={toggleMenu}
+            isMenuOpen={isMenuOpen}
+          />
 
           {isStoreOpen && (
             <ModalStore
