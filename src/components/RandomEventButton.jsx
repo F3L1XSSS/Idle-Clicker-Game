@@ -8,8 +8,14 @@ const RandomEventButton = ({
   setTimer,
   setIsModalRandomEventOpen,
   setModalMessage,
+  upgradeCount,
+  setUpgradeCount,
+  secUpgradeCount,
+  setSecUpgradeCount,
+  thirdUpgradeCount,
+  setThirdUpgradeCount
 }) => {
-  const [isButtonDisabled, setIsButtonDisabled] = useState(timer !== 600);
+  const [isButtonDisabled, setIsButtonDisabled] = useState(timer !== 1);
 
   useEffect(() => {
     if (isButtonDisabled) {
@@ -40,10 +46,17 @@ const RandomEventButton = ({
 
     // Определяем события и их вероятности
     const events = [
-      { type: 'reset', probability: 0.1 }, // 10% шанс
-      { type: 'hourIncome', probability: 0.1 }, //10% шанс
-      { type: 'tenIncome', probability: 0.1 }, // 60% шанс
-      { type: 'minusTen', probability: 0.6 },
+      { type: 'reset', probability: 0 }, // 5% шанс
+      { type: 'hourIncome', probability: 0 }, //5% шанс
+      { type: 'tenIncome', probability: 0 }, // 10% шанс
+      { type: 'minusTen', probability: 0.1 }, // 10% шанс
+      { type: 'minusLvlOne', probability: 0.9}, // 10% шанс
+      { type: 'minusLvlSec', probability: 0}, // 10% шанс
+      { type: 'minusLvlThird', probability: 0}, // 10% шанс
+      { type: 'plusLvlOne', probability: 0}, // 10% шанс
+      { type: 'plusLvlSec', probability: 0}, // 10% шанс
+      { type: 'plusLvlThird', probability: 0}, // 10% шанс
+      { type: 'nothing', probability: 0} // 10%
     ];
 
     // Рассчитываем случайное число для определения события
@@ -85,6 +98,21 @@ const RandomEventButton = ({
             setModalMessage(`-10 test: -$${tenIncome.toFixed(2)}`);
             setIsModalRandomEventOpen(true);
             return;
+          case 'minusLvlOne':
+            if (upgradeCount  === 1){
+            setUpgradeCount(currentUpgradeCount => currentUpgradeCount - 1)
+            setModalMessage(
+              `-1 lvl on first buissness!`
+            );
+              setIsModalRandomEventOpen(true);
+            }
+            else {
+              setModalMessage(
+                `Nothing changed!`
+              )
+              setIsModalRandomEventOpen(true);
+            };
+        return;
           default:
             // Нет действия для неопределенного события
             break;

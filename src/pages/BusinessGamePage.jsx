@@ -10,12 +10,24 @@ import menuIcon from '../images/menuIcon.png';
 import ModalLaboratory from '../components/ModalLaboratory';
 import ModalRandomEvent from '../components/ModalRandomEvent';
 import TaxLoanMenu from '../components/TaxLoanMenu';
+import AchievementsModal from '../components/AchievementsModal';
+import PropertyModal from '../components/ModalProperty';
 
 const BusinessGamePage = () => {
   const [balance, setBalance] = useState(() => Number(localStorage.getItem('balance')) || 0);
   const [income, setIncome] = useState(() => {
     const savedIncome = localStorage.getItem('income');
     return savedIncome ? Number(savedIncome) : 1;
+  });
+
+  const [secondIncome, setSecondIncome] = useState(() => {
+    const savedSecondIncome = localStorage.getItem('secondIncome');
+    return savedSecondIncome ? Number(savedSecondIncome) : 0
+  });
+
+  const [thirdIncome, setThirdIncome] = useState(() => {
+    const savedThirdIncome = localStorage.getItem('thirdIncome');
+    return savedThirdIncome ? Number(savedThirdIncome) : 0
   });
 
   const [modalMessage, setModalMessage] = useState('');
@@ -43,7 +55,7 @@ const BusinessGamePage = () => {
     setIsResearching(false);
     setPurchasedLocations(false);
     setPurchasedUpgrade(false);
-    setGreenCrystals(1000);
+    setGreenCrystals(0);
     setSciencePoints(0);
     // Сброс состояний до начальных значений
     setBalance(0);
@@ -65,11 +77,53 @@ const BusinessGamePage = () => {
     setSecondBusinessMultiplier(1);
     setThirdBusinessMultiplier(1);
 
+    setAchievements(0);
+
     setTimer(0);
 
     // Очистка localStorage
     localStorage.clear();
   };
+
+  const [achievements, setAchievements] = useState(() => {
+    // Читаем данные из localStorage при инициализации состояния
+    const savedAchievements = JSON.parse(localStorage.getItem('achievements'));
+    return savedAchievements || [];
+  });
+const [isAchievementsModalOpen, setIsAchievementsModalOpen] = useState(false);
+
+const toggleAchievementsModal = () => {
+  setIsAchievementsModalOpen(!isAchievementsModalOpen);
+};
+
+// Добавляем первое достижение, когда баланс достигает 1 миллиона
+useEffect(() => {
+  if (balance >= 1000000 && !achievements.includes('Первый миллион')) {
+    setAchievements([...achievements, 'Первый миллион']);
+  }
+}, [balance, achievements]);
+
+const [property, setProperty] = useState(() => {
+  const savedProperty = JSON.parse(localStorage.getItem('property'));
+  return savedProperty || [];
+});
+
+const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
+const [selectedProperty, setSelectedProperty] = useState(null);
+
+const togglePropertyModal = (property = null) => {
+  setSelectedProperty(property);
+  setIsPropertyModalOpen(!isPropertyModalOpen);
+};
+
+
+const handleBuy = (item) => {
+  if (balance >= item.price) {
+    setProperty([...property, item]);
+    setBalance(balance - item.price);
+  }
+};
+
 
   const [researchIntervalId, setResearchIntervalId] = useState(null);
   // Функция для начала исследования
@@ -330,7 +384,7 @@ const BusinessGamePage = () => {
   // Эффект для начисления налогов
   useEffect(() => {
     const handleTaxCalculation = () => {
-      setTaxes(currentTaxes => currentTaxes + income * 0.2);
+      setTaxes(currentTaxes => currentTaxes + (income + secondIncome + thirdIncome) * 0.2);
     };
 
     // Запустите начисление налогов сразу при монтировании компонента
@@ -341,7 +395,7 @@ const BusinessGamePage = () => {
 
     // Очистите интервал при размонтировании компонента
     return () => clearInterval(taxInterval);
-  }, [income]); // Перезапускаем интервал, если баланс изменился
+  }, [income, secondIncome, thirdIncome]); // Перезапускаем интервал, если баланс изменился
 
   // Функция для оплаты налогов
   const payTaxes = () => {
@@ -462,9 +516,6 @@ const BusinessGamePage = () => {
   const [secondWindowUnlocked, setSecondWindowUnlocked] = useState(
     () => Number(localStorage.getItem('secondWindowUnlocked')) || 0
   );
-  const [secondIncome, setSecondIncome] = useState(
-    () => Number(localStorage.getItem('secondIncome')) || 0
-  );
   const [secUpgradeCost, setSecUpgradeCost] = useState(
     () => Number(localStorage.getItem('secUpgradeCost')) || 100
   );
@@ -476,9 +527,6 @@ const BusinessGamePage = () => {
   const [thirdWindowUnlocked, setThirdWindowUnlocked] = useState(
     () => Number(localStorage.getItem('thirdWindowUnlocked')) || 0
   );
-  const [thirdIncome, setThirdIncome] = useState(
-    () => Number(localStorage.getItem('thirdIncome')) || 0
-  );
   const [thirdUpgradeCost, setThirdUpgradeCost] = useState(
     () => Number(localStorage.getItem('thirdUpgradeCost')) || 10000
   );
@@ -486,12 +534,15 @@ const BusinessGamePage = () => {
     () => Number(localStorage.getItem('thirdUpgradeCount')) || 0
   );
 
-  const secondUnlockCost = 1000;
-  const thirdUnlockCost = 50000;
+  const secondUnlockCost = 10000;
+  const thirdUnlockCost = 500000;
 
   useEffect(() => {
     // Сохранение текущего состояния в localStorage
     const saveState = () => {
+      localStorage.setItem('achievements', JSON.stringify(achievements));
+      localStorage.setItem('property', JSON.stringify(property));
+
       localStorage.setItem('researchCost', researchCost.toString());
       localStorage.setItem('creditAmount', creditAmount.toString());
       localStorage.setItem('debt', debt.toString());
@@ -527,6 +578,8 @@ const BusinessGamePage = () => {
     // Вызов сохранения состояния при изменении любого из состояний
     saveState();
   }, [
+    property,
+    achievements,
     balance,
     income,
     researchCost,
@@ -646,18 +699,24 @@ const BusinessGamePage = () => {
   const secPurshcaseUpgrade = () => {
     const isFifthUpgrade = (secUpgradeCount + 1) % 5 === 0;
     const isTenthUpgrade = (secUpgradeCount + 1) % 10 === 0;
+    const isFirstUpgrade = (secUpgradeCount === 0)
 
     if (balance >= secUpgradeCost && (!isFifthUpgrade || (isFifthUpgrade && sciencePoints > 0))) {
       let baseSecIncrement = 1.3; // Базовое увеличение на 10%
       let additionalSecIncrement = (secUpgradeCount % 5) * 0.02; // Дополнительное увеличение на 2% за каждый уровень в текущем цикле пяти улучшений
       let incrementSecFactor = baseSecIncrement + additionalSecIncrement;
 
-      setSecondIncome(currentsecondIncome => currentsecondIncome * incrementSecFactor + 10);
+      setSecondIncome(currentsecondIncome => currentsecondIncome * incrementSecFactor);
       setBalance(prevBalance => prevBalance - secUpgradeCost);
       setSecUpgradeCount(secUpgradeCount + 1);
 
       let costSecMultiplier = 1.2 + (isFifthUpgrade ? 0.1 : 0); // Основное увеличение на 20%, дополнительное на 10% каждое пятое улучшение
       setSecUpgradeCost(currentsecCost => currentsecCost * costSecMultiplier);
+
+      if(isFirstUpgrade) {
+        setSecondIncome(10);
+        return;
+      }
 
       if (isFifthUpgrade) {
         if (sciencePoints > 0) {
@@ -687,18 +746,24 @@ const BusinessGamePage = () => {
   const thirdPurshcaseUpgrade = () => {
     const isFifthUpgrade = (thirdUpgradeCount + 1) % 5 === 0;
     const isTenthUpgrade = (thirdUpgradeCount + 1) % 10 === 0;
+    const isFirstUpgrade = (thirdUpgradeCount === 0);
 
     if (balance >= thirdUpgradeCost && (!isFifthUpgrade || (isFifthUpgrade && sciencePoints > 0))) {
       let baseThirdIncrement = 1.3; // Базовое увеличение на 10%
-      let additionalThirdIncrement = (thirdUpgradeCount % 5) * 0.02; // Дополнительное увеличение на 2% за каждый уровень в текущем цикле пяти улучшений
+      let additionalThirdIncrement = (thirdUpgradeCount % 5) * 0.05; // Дополнительное увеличение на 5% за каждый уровень в текущем цикле пяти улучшений
       let incrementThirdFactor = baseThirdIncrement + additionalThirdIncrement;
 
-      setThirdIncome(currentthirdIncome => currentthirdIncome * incrementThirdFactor + 100);
+      setThirdIncome(currentthirdIncome => currentthirdIncome * incrementThirdFactor);
       setBalance(prevBalance => prevBalance - thirdUpgradeCost);
       setThirdUpgradeCount(thirdUpgradeCount + 1);
 
       let costThirdMultiplier = 1.5 + (isFifthUpgrade ? 0.2 : 0); // Основное увеличение на 20%, дополнительное на 10% каждое пятое улучшение
       setThirdUpgradeCost(currentthirdCost => currentthirdCost * costThirdMultiplier);
+
+      if(isFirstUpgrade) {
+        setThirdIncome(100);
+        return;
+      }
 
       if (isFifthUpgrade) {
         if (sciencePoints > 0) {
@@ -735,24 +800,31 @@ const BusinessGamePage = () => {
       <div className="content-container" style={{ position: 'relative' }}>
         <div
           style={{ backgroundImage: `url(${backgroundImage})` }}
-          className=" relative min-h-screen bg-gray-800 text-white flex flex-col items-center justify-center"
+          className="relative min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center"
         >
+          <AchievementsModal
+            isShowing={isAchievementsModalOpen}
+            toggleModal={toggleAchievementsModal}
+            achievements={achievements}
+          />
+          
+          <PropertyModal
+            isShowing={isPropertyModalOpen}
+            toggleModal={togglePropertyModal}
+            property={property}
+          />
+
           <div className="absolute top-0 left-0 m-4 z-50">
             <button className="p-2" onClick={toggleMenu}>
-              {/* Иконка гамбургера */}
               <img
-                src={menuIcon} // Путь к иконке гамбургера
+                src={menuIcon}
                 alt="Menu"
                 className="h-9 w-9"
               />
             </button>
           </div>
 
-          {/* Контейнер для кнопок 'Магазин', 'Лаборатория', и звука */}
-          <div
-            className="absolute top-0 right-0 m-4 flex items-center space-x-2 z-50"
-            style={{ zIndex: 10 }}
-          >
+          <div className="absolute top-0 right-0 m-4 flex items-center space-x-2 z-50">
             <RandomEventButton
               timer={timer}
               setTimer={setTimer}
@@ -761,22 +833,43 @@ const BusinessGamePage = () => {
               firstBusinessMultiplier={firstBusinessMultiplier}
               setIsModalRandomEventOpen={setIsModalRandomEventOpen}
               setModalMessage={setModalMessage}
+              upgradeCount={upgradeCount}
+              setUpgradeCount={setUpgradeCount}
+              secUpgradeCount={secUpgradeCount}
+              setSecUpgradeCount={setSecUpgradeCount}
+              thirdUpgradeCount={thirdUpgradeCount}
+              setThirdUpgradeCount={setThirdUpgradeCount}
             />
+
+            <button
+              onClick={togglePropertyModal}
+              className="top-0 bg-red-700 hover:bg-red-900 text-white font-bold py-2 px-4 rounded transition-all ease-in-out duration-300"
+            >
+              Имущество
+            </button>
+
+            <button
+              onClick={toggleAchievementsModal}
+              className="top-0 bg-yellow-700 hover:bg-yellow-900 text-white font-bold py-2 px-4 rounded transition-all ease-in-out duration-300"
+            >
+              Достижения
+            </button>
+
             <button
               onClick={toggleStore}
-              className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-all ease-in-out duration-300"
+              className="bg-green-700 hover:bg-green-900 text-white font-bold py-2 px-4 rounded transition-all ease-in-out duration-300"
             >
               Магазин
             </button>
             <button
               onClick={toggleLab}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-all ease-in-out duration-300"
+              className="bg-blue-700 hover:bg-blue-900 text-white font-bold py-2 px-4 rounded transition-all ease-in-out duration-300"
             >
               Лаборатория
             </button>
             <button
               onClick={toggleSound}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-green-500 text-white font-bold text-2xl border-2 border-green-500"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-green-700 text-white font-bold text-2xl border-2 border-green-700"
             >
               {isPlaying ? '🔊' : '🔇'}
             </button>
@@ -826,21 +919,21 @@ const BusinessGamePage = () => {
 
           <button
             onClick={resetGame}
-            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110"
+            className="bg-red-700 hover:bg-red-900 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110"
             style={{ zIndex: 10 }}
           >
-            Start Over
+            Начать заново
           </button>
           <h1 className="text-4xl font-bold mb-6" style={{ zIndex: 10 }}>
-            Business Game
+            Биржевая Игра
           </h1>
           <p className="text-xl mb-2" style={{ zIndex: 10 }}>
-            Balance:{' '}
+            Баланс:{' '}
             <span className="font-bold">${convertNumberToShortForm(balance.toFixed(2))}</span>
           </p>
           <div className="flex flex-wrap justify-center gap-4" style={{ zIndex: 10 }}>
             <BusinessWindow
-              name="First Bussiness"
+              name="Первый Бизнес"
               income={income}
               onUpgrade={purshcaseUpgrade}
               upgradeCost={upgradeCost}
@@ -850,7 +943,7 @@ const BusinessGamePage = () => {
               convertNumberToShortForm={convertNumberToShortForm}
             />
             <BusinessWindow
-              name="Second Bussiness"
+              name="Второй Бизнес"
               income={secondIncome}
               onUpgrade={secPurshcaseUpgrade}
               upgradeCost={secUpgradeCost}
@@ -862,7 +955,7 @@ const BusinessGamePage = () => {
               convertNumberToShortForm={convertNumberToShortForm}
             />
             <BusinessWindow
-              name="Third Bussiness"
+              name="Третий Бизнес"
               income={thirdIncome}
               onUpgrade={thirdPurshcaseUpgrade}
               upgradeCost={thirdUpgradeCost}
