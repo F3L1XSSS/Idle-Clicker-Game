@@ -1,3 +1,5 @@
+import Modal from "./Common/Modal";
+
 const TaxLoanMenu = ({
   taxes,
   payTaxes,
@@ -9,6 +11,7 @@ const TaxLoanMenu = ({
   isMenuOpen,
 }) => {
   return (
+    <Modal isShowing={isMenuOpen} toggle={toggleMenu}>
     <div
       className={`absolute w-[300px] p-5 bg-blue-900 rounded shadow-lg top-0 left-0 mt-[10px] transition-all duration-500 transform ${
         isMenuOpen ? 'translate-x-0 opacity-100' : '-translate-x-[700px] opacity-0'
@@ -59,6 +62,7 @@ const TaxLoanMenu = ({
         </div>
       )}
     </div>
+    </Modal>
   );
 };
 

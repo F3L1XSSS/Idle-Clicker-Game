@@ -12,6 +12,7 @@ import ModalRandomEvent from '../components/ModalRandomEvent';
 import TaxLoanMenu from '../components/TaxLoanMenu';
 import AchievementsModal from '../components/AchievementsModal';
 import PropertyModal from '../components/ModalProperty';
+import OwnedPropertiesModal from '../components/OwnedPropertyModal';
 
 const BusinessGamePage = () => {
   const [balance, setBalance] = useState(() => Number(localStorage.getItem('balance')) || 0);
@@ -22,12 +23,12 @@ const BusinessGamePage = () => {
 
   const [secondIncome, setSecondIncome] = useState(() => {
     const savedSecondIncome = localStorage.getItem('secondIncome');
-    return savedSecondIncome ? Number(savedSecondIncome) : 0
+    return savedSecondIncome ? Number(savedSecondIncome) : 0;
   });
 
   const [thirdIncome, setThirdIncome] = useState(() => {
     const savedThirdIncome = localStorage.getItem('thirdIncome');
-    return savedThirdIncome ? Number(savedThirdIncome) : 0
+    return savedThirdIncome ? Number(savedThirdIncome) : 0;
   });
 
   const [modalMessage, setModalMessage] = useState('');
@@ -78,6 +79,7 @@ const BusinessGamePage = () => {
     setThirdBusinessMultiplier(1);
 
     setAchievements(0);
+    setProperty(0);
 
     setTimer(0);
 
@@ -87,43 +89,89 @@ const BusinessGamePage = () => {
 
   const [achievements, setAchievements] = useState(() => {
     // Читаем данные из localStorage при инициализации состояния
-    const savedAchievements = JSON.parse(localStorage.getItem('achievements'));
-    return savedAchievements || [];
+    const savedAchievements = localStorage.getItem('achievements');
+    let parsedAchievements;
+  
+    try {
+      parsedAchievements = JSON.parse(savedAchievements);
+    } catch (error) {
+      parsedAchievements = [];
+    }
+  
+    // Проверяем, что parsedAchievements является массивом
+    return Array.isArray(parsedAchievements) ? parsedAchievements : [];
   });
-const [isAchievementsModalOpen, setIsAchievementsModalOpen] = useState(false);
+  
+  const [isAchievementsModalOpen, setIsAchievementsModalOpen] = useState(false);
+  
+  const toggleAchievementsModal = () => {
+    if (isStoreOpen) setIsStoreOpen(false);
+    if (isMenuOpen) setIsMenuOpen(false);
+    if (isLabOpen) setIsLabOpen(false);
+    if (isOwnedPropertiesModalOpen) setIsOwnedPropertiesModalOpen(false);
+    if (isPropertyModalOpen) setIsPropertyModalOpen(false);
+    setIsAchievementsModalOpen(!isAchievementsModalOpen);
+  };
+  
+  // Добавляем первое достижение, когда баланс достигает 1 миллиона
+  useEffect(() => {
+    if (balance >= 1000000) {
+      setAchievements(prevAchievements => {
+        // Проверяем, является ли prevAchievements массивом
+        if (Array.isArray(prevAchievements) && !prevAchievements.includes('Первый миллион')) {
+          const newAchievements = [...prevAchievements, 'Первый миллион'];
+          localStorage.setItem('achievements', JSON.stringify(newAchievements));
+          return newAchievements;
+        }
+        return prevAchievements;
+      });
+    }
+  }, [balance]);
 
-const toggleAchievementsModal = () => {
-  setIsAchievementsModalOpen(!isAchievementsModalOpen);
-};
+  const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
+  const [isOwnedPropertiesModalOpen, setIsOwnedPropertiesModalOpen] = useState(false);
 
-// Добавляем первое достижение, когда баланс достигает 1 миллиона
-useEffect(() => {
-  if (balance >= 1000000 && !achievements.includes('Первый миллион')) {
-    setAchievements([...achievements, 'Первый миллион']);
-  }
-}, [balance, achievements]);
+  const togglePropertyModal = () => {
+    if (isStoreOpen) setIsStoreOpen(false);
+    if (isMenuOpen) setIsMenuOpen(false);
+    if (isLabOpen) setIsLabOpen(false);
+    if (isAchievementsModalOpen) setIsAchievementsModalOpen(false);
+    if (isOwnedPropertiesModalOpen) setIsOwnedPropertiesModalOpen(false);
+    setIsPropertyModalOpen(!isPropertyModalOpen);
+  };
 
-const [property, setProperty] = useState(() => {
-  const savedProperty = JSON.parse(localStorage.getItem('property'));
-  return savedProperty || [];
-});
+  const toggleOwnedPropertyModal = () => {
+    if (isStoreOpen) setIsStoreOpen(false);
+    if (isMenuOpen) setIsMenuOpen(false);
+    if (isLabOpen) setIsLabOpen(false);
+    if (isAchievementsModalOpen) setIsAchievementsModalOpen(false);
+    if (isPropertyModalOpen) setIsPropertyModalOpen(false);
+    setIsOwnedPropertiesModalOpen(!isOwnedPropertiesModalOpen);
+  };
 
-const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
-const [selectedProperty, setSelectedProperty] = useState(null);
+  const handleBuy = (item) => {
+    console.log('Property before purchase:', property);
+    console.log('Attempting to buy:', item);
+  
+    if (Array.isArray(property) && balance >= item.price && !property.some((p) => p.name === item.name)) {
+      const newProperty = [...property, item];
+      setProperty(newProperty);
+      setBalance(balance - item.price);
+      console.log('Property after purchase:', newProperty);
+    } else {
+      console.log('Insufficient balance or property already owned');
+      alert('Not enough balance to buy this property or property already owned!');
+    }
+  };
 
-const togglePropertyModal = (property = null) => {
-  setSelectedProperty(property);
-  setIsPropertyModalOpen(!isPropertyModalOpen);
-};
-
-
-const handleBuy = (item) => {
-  if (balance >= item.price) {
-    setProperty([...property, item]);
-    setBalance(balance - item.price);
-  }
-};
-
+  const properties = [
+    { name: 'Big Mac', price: 2 },
+    { name: 'Flip Flops', price: 3 },
+    { name: 'Coca-Cola Pack', price: 5 },
+    { name: 'Movie Ticket', price: 12 },
+    { name: 'Book', price: 15 },
+    { name: 'Lobster Dinner', price: 45 }
+  ];
 
   const [researchIntervalId, setResearchIntervalId] = useState(null);
   // Функция для начала исследования
@@ -534,6 +582,11 @@ const handleBuy = (item) => {
     () => Number(localStorage.getItem('thirdUpgradeCount')) || 0
   );
 
+  const [property, setProperty] = useState(() => {
+    const savedProperty = JSON.parse(localStorage.getItem("property"));
+    return Array.isArray(savedProperty) ? savedProperty : [];
+  });
+
   const secondUnlockCost = 10000;
   const thirdUnlockCost = 500000;
 
@@ -630,30 +683,30 @@ const handleBuy = (item) => {
   const purshcaseUpgrade = () => {
     const isFifthUpgrade = (upgradeCount + 1) % 5 === 0;
     const isTenthUpgrade = (upgradeCount + 1) % 10 === 0;
-
+  
     if (balance >= upgradeCost) {
       // Рассчитываем фактор увеличения дохода в зависимости от номера улучшения
-      let baseIncrement = 1.1; // Базовое увеличение на 10%
-      let additionalIncrement = (upgradeCount % 5) * 0.02; // Дополнительное увеличение на 2% за каждый уровень в текущем цикле пяти улучшений
+      let baseIncrement = 1.05; // Базовое увеличение на 5%
+      let additionalIncrement = (upgradeCount % 5) * 0.01; // Дополнительное увеличение на 1% за каждый уровень в текущем цикле пяти улучшений
       let incrementFactor = baseIncrement + additionalIncrement;
-
+  
       // Увеличиваем доход
       setIncome(currentIncome => currentIncome * incrementFactor);
-
+  
       // Уменьшаем баланс на стоимость улучшения
       setBalance(currentBalance => currentBalance - upgradeCost);
-
+  
       // Увеличиваем счётчик улучшений
       setUpgradeCount(currentCount => currentCount + 1);
-
+  
       // Увеличиваем стоимость следующего улучшения
-      let costMultiplier = 1.2 + (isFifthUpgrade ? 0.1 : 0); // Основное увеличение на 20%, дополнительное на 10% каждое пятое улучшение
+      let costMultiplier = 1.1 + (isFifthUpgrade ? 0.05 : 0); // Основное увеличение на 10%, дополнительное на 5% каждое пятое улучшение
       setUpgradeCost(currentCost => currentCost * costMultiplier);
-
+  
       if (isFifthUpgrade) {
         if (sciencePoints > 0) {
-          // Дополнительное увеличение дохода на 50% на каждом пятом улучшении
-          setIncome(currentIncome => currentIncome * 1.5);
+          // Дополнительное увеличение дохода на 25% на каждом пятом улучшении
+          setIncome(currentIncome => currentIncome * 1.25);
           // Уменьшаем количество очков науки
           setSciencePoints(currentPoints => currentPoints - 1);
         } else {
@@ -666,7 +719,7 @@ const handleBuy = (item) => {
           return;
         }
       }
-
+  
       if (isTenthUpgrade) {
         // Удвоение дохода на каждом десятом улучшении
         setIncome(currentIncome => currentIncome * 2);
@@ -675,7 +728,7 @@ const handleBuy = (item) => {
       alert('Not enough balance for this upgrade!');
     }
   };
-
+  
   const unlockSecondWindow = () => {
     if (balance >= secondUnlockCost && !secondWindowUnlocked) {
       setBalance(prevBalance => prevBalance - secondUnlockCost);
@@ -685,7 +738,7 @@ const handleBuy = (item) => {
       alert('Not enough balance to unlock!');
     }
   };
-
+  
   const unlockThirdWindow = () => {
     if (balance >= thirdUnlockCost && !thirdWindowUnlocked) {
       setBalance(prevBalance => prevBalance - thirdUnlockCost);
@@ -695,100 +748,103 @@ const handleBuy = (item) => {
       alert('Not enough balance to unlock!');
     }
   };
-
+  
   const secPurshcaseUpgrade = () => {
     const isFifthUpgrade = (secUpgradeCount + 1) % 5 === 0;
     const isTenthUpgrade = (secUpgradeCount + 1) % 10 === 0;
-    const isFirstUpgrade = (secUpgradeCount === 0)
-
-    if (balance >= secUpgradeCost && (!isFifthUpgrade || (isFifthUpgrade && sciencePoints > 0))) {
-      let baseSecIncrement = 1.3; // Базовое увеличение на 10%
-      let additionalSecIncrement = (secUpgradeCount % 5) * 0.02; // Дополнительное увеличение на 2% за каждый уровень в текущем цикле пяти улучшений
+    const isFirstUpgrade = (secUpgradeCount === 0);
+  
+    if (balance >= secUpgradeCost) {
+      let baseSecIncrement = 1.07; // Базовое увеличение на 7%
+      let additionalSecIncrement = (secUpgradeCount % 5) * 0.01; // Дополнительное увеличение на 1% за каждый уровень в текущем цикле пяти улучшений
       let incrementSecFactor = baseSecIncrement + additionalSecIncrement;
-
-      setSecondIncome(currentsecondIncome => currentsecondIncome * incrementSecFactor);
+  
+      setSecondIncome(currentSecondIncome => currentSecondIncome * incrementSecFactor);
       setBalance(prevBalance => prevBalance - secUpgradeCost);
       setSecUpgradeCount(secUpgradeCount + 1);
-
-      let costSecMultiplier = 1.2 + (isFifthUpgrade ? 0.1 : 0); // Основное увеличение на 20%, дополнительное на 10% каждое пятое улучшение
-      setSecUpgradeCost(currentsecCost => currentsecCost * costSecMultiplier);
-
-      if(isFirstUpgrade) {
+  
+      let costSecMultiplier = 1.12 + (isFifthUpgrade ? 0.05 : 0); // Основное увеличение на 12%, дополнительное на 5% каждое пятое улучшение
+      setSecUpgradeCost(currentSecCost => currentSecCost * costSecMultiplier);
+  
+      if (isFirstUpgrade) {
         setSecondIncome(10);
         return;
       }
-
+  
       if (isFifthUpgrade) {
         if (sciencePoints > 0) {
-          // Если это пятое улучшение, уменьшаем количество очков науки
+          // Дополнительное увеличение дохода на 25% на каждом пятом улучшении
+          setSecondIncome(currentSecondIncome => currentSecondIncome * 1.25);
+          // Уменьшаем количество очков науки
           setSciencePoints(currentPoints => currentPoints - 1);
-          setSecondIncome(currentsecondIncome => currentsecondIncome * 1.7); // Дополнительное увеличение дохода
         } else {
           alert('Not enough science points for this upgrade!');
           // Отменяем последнее улучшение, если не хватает научных очков
-          setSecondIncome(currentsecondIncome => currentsecondIncome / incrementSecFactor);
+          setSecondIncome(currentSecondIncome => currentSecondIncome / incrementSecFactor);
           setBalance(currentBalance => currentBalance + secUpgradeCost);
-          setSecUpgradeCount(currentsecUpgradeCount => currentsecUpgradeCount - 1);
-          setSecUpgradeCost(currentsecCost => currentsecCost / costSecMultiplier);
+          setSecUpgradeCount(currentSecUpgradeCount => currentSecUpgradeCount - 1);
+          setSecUpgradeCost(currentSecCost => currentSecCost / costSecMultiplier);
           return;
         }
       }
-
+  
       if (isTenthUpgrade) {
         // Удвоение дохода на каждом десятом улучшении
-        setSecondIncome(currentsecondIncome => currentsecondIncome * 1.8);
+        setSecondIncome(currentSecondIncome => currentSecondIncome * 2);
       }
     } else {
       alert('Not enough balance for this upgrade!');
     }
   };
-
+  
   const thirdPurshcaseUpgrade = () => {
     const isFifthUpgrade = (thirdUpgradeCount + 1) % 5 === 0;
     const isTenthUpgrade = (thirdUpgradeCount + 1) % 10 === 0;
     const isFirstUpgrade = (thirdUpgradeCount === 0);
-
-    if (balance >= thirdUpgradeCost && (!isFifthUpgrade || (isFifthUpgrade && sciencePoints > 0))) {
-      let baseThirdIncrement = 1.3; // Базовое увеличение на 10%
-      let additionalThirdIncrement = (thirdUpgradeCount % 5) * 0.05; // Дополнительное увеличение на 5% за каждый уровень в текущем цикле пяти улучшений
+  
+    if (balance >= thirdUpgradeCost) {
+      let baseThirdIncrement = 1.1; // Базовое увеличение на 10%
+      let additionalThirdIncrement = (thirdUpgradeCount % 5) * 0.01; // Дополнительное увеличение на 1% за каждый уровень в текущем цикле пяти улучшений
       let incrementThirdFactor = baseThirdIncrement + additionalThirdIncrement;
-
-      setThirdIncome(currentthirdIncome => currentthirdIncome * incrementThirdFactor);
+  
+      setThirdIncome(currentThirdIncome => currentThirdIncome * incrementThirdFactor);
       setBalance(prevBalance => prevBalance - thirdUpgradeCost);
       setThirdUpgradeCount(thirdUpgradeCount + 1);
-
-      let costThirdMultiplier = 1.5 + (isFifthUpgrade ? 0.2 : 0); // Основное увеличение на 20%, дополнительное на 10% каждое пятое улучшение
-      setThirdUpgradeCost(currentthirdCost => currentthirdCost * costThirdMultiplier);
-
-      if(isFirstUpgrade) {
+  
+      let costThirdMultiplier = 1.15 + (isFifthUpgrade ? 0.05 : 0); // Основное увеличение на 15%, дополнительное на 5% каждое пятое улучшение
+      setThirdUpgradeCost(currentThirdCost => currentThirdCost * costThirdMultiplier);
+  
+      if (isFirstUpgrade) {
         setThirdIncome(100);
         return;
       }
-
+  
       if (isFifthUpgrade) {
         if (sciencePoints > 0) {
-          // Если это пятое улучшение, уменьшаем количество очков науки
+          // Дополнительное увеличение дохода на 25% на каждом пятом улучшении
+          setThirdIncome(currentThirdIncome => currentThirdIncome * 1.25);
+          // Уменьшаем количество очков науки
           setSciencePoints(currentPoints => currentPoints - 1);
-          setThirdIncome(currentthirdIncome => currentthirdIncome * 2); // Дополнительное увеличение дохода
         } else {
           alert('Not enough science points for this upgrade!');
           // Отменяем последнее улучшение, если не хватает научных очков
-          setThirdIncome(currentthirdIncome => currentthirdIncome / incrementThirdFactor);
+          setThirdIncome(currentThirdIncome => currentThirdIncome / incrementThirdFactor);
           setBalance(currentBalance => currentBalance + thirdUpgradeCost);
-          setThirdUpgradeCount(currentthirdUpgradeCount => currentthirdUpgradeCount - 1);
-          setThirdUpgradeCost(currentthirdCost => currentthirdCost / costThirdMultiplier);
+          setThirdUpgradeCount(currentThirdUpgradeCount => currentThirdUpgradeCount - 1);
+          setThirdUpgradeCost(currentThirdCost => currentThirdCost / costThirdMultiplier);
           return;
         }
       }
-
+  
       if (isTenthUpgrade) {
         // Удвоение дохода на каждом десятом улучшении
-        setThirdIncome(currentthirdIncome => currentthirdIncome * 2);
+        setThirdIncome(currentThirdIncome => currentThirdIncome * 2);
       }
     } else {
       alert('Not enough balance for this upgrade!');
     }
   };
+  
 
   const calculatedPenalty = payment * 0.5;
 
@@ -799,9 +855,9 @@ const handleBuy = (item) => {
       <CanvasContainer />
       <div className="content-container" style={{ position: 'relative' }}>
         <div
-          style={{ backgroundImage: `url(${backgroundImage})` }}
-          className="relative min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center"
-        >
+  style={{ backgroundImage: `url(${backgroundImage})` }}
+  className="relative min-h-screen bg-cover bg-center bg-fixed text-white flex flex-col items-center justify-center"
+  >
           <AchievementsModal
             isShowing={isAchievementsModalOpen}
             toggleModal={toggleAchievementsModal}
@@ -809,10 +865,17 @@ const handleBuy = (item) => {
           />
           
           <PropertyModal
-            isShowing={isPropertyModalOpen}
-            toggleModal={togglePropertyModal}
-            property={property}
-          />
+        isShowing={isPropertyModalOpen}
+        toggleModal={togglePropertyModal}
+        properties={properties}
+        ownedProperties={property}
+        handleBuy={handleBuy}
+      />
+      <OwnedPropertiesModal
+        isShowing={isOwnedPropertiesModalOpen}
+        toggleModal={toggleOwnedPropertyModal}
+        ownedProperties={property}
+      />
 
           <div className="absolute top-0 left-0 m-4 z-50">
             <button className="p-2" onClick={toggleMenu}>
@@ -829,7 +892,9 @@ const handleBuy = (item) => {
               timer={timer}
               setTimer={setTimer}
               setBalance={setBalance}
+              setIncome={setIncome}
               income={income}
+              setUpgradeCost={setUpgradeCost}
               firstBusinessMultiplier={firstBusinessMultiplier}
               setIsModalRandomEventOpen={setIsModalRandomEventOpen}
               setModalMessage={setModalMessage}
@@ -841,12 +906,19 @@ const handleBuy = (item) => {
               setThirdUpgradeCount={setThirdUpgradeCount}
             />
 
-            <button
-              onClick={togglePropertyModal}
-              className="top-0 bg-red-700 hover:bg-red-900 text-white font-bold py-2 px-4 rounded transition-all ease-in-out duration-300"
-            >
-              Имущество
-            </button>
+<button
+            onClick={togglePropertyModal}
+            className="bg-red-700 hover:bg-red-900 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110"
+          >
+            Купить имущество
+          </button>
+
+          <button
+            onClick={toggleOwnedPropertyModal}
+            className="bg-blue-700 hover:bg-blue-900 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-110"
+          >
+            Просмотр имущества
+          </button>
 
             <button
               onClick={toggleAchievementsModal}

@@ -1,25 +1,13 @@
 import React from 'react';
 import Modal from './Common/Modal';
 
-const AchievementsModal = ({ isShowing, toggleModal, achievements }) => {
+const OwnedPropertiesModal = ({ isShowing, toggleModal, ownedProperties }) => {
   if (!isShowing) return null;
 
   return (
     <Modal isShowing={isShowing} toggle={toggleModal}>
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-black p-4 rounded shadow-lg w-1/2 relative">
-        <h2 className="text-xl font-bold mb-4">Достижения</h2>
-        <ul>
-          {achievements.length > 0 ? (
-            achievements.map((achievement, index) => (
-              <li key={index} className="mb-2">
-                {achievement}
-              </li>
-            ))
-          ) : (
-            <li className="mb-2">Нет достижений</li>
-          )}
-        </ul>
+      <div className="bg-black p-4 rounded shadow-lg w-3/4 relative">
         <button
           onClick={toggleModal}
           className="absolute top-2 right-2 transition-all ease-in-out hover:scale-110 duration-300"
@@ -35,11 +23,24 @@ const AchievementsModal = ({ isShowing, toggleModal, achievements }) => {
             <path d="M 25 2 C 12.309534 2 2 12.309534 2 25 C 2 37.690466 12.309534 48 25 48 C 37.690466 48 48 37.690466 48 25 C 48 12.309534 37.690466 2 25 2 z M 25 4 C 36.609534 4 46 13.390466 46 25 C 46 36.609534 36.609534 46 25 46 C 13.390466 46 4 36.609534 4 25 C 4 13.390466 13.390466 4 25 4 z M 32.990234 15.986328 A 1.0001 1.0001 0 0 0 32.292969 16.292969 L 25 23.585938 L 17.707031 16.292969 A 1.0001 1.0001 0 0 0 16.990234 15.990234 A 1.0001 1.0001 0 0 0 16.292969 17.707031 L 23.585938 25 L 16.292969 32.292969 A 1.0001 1.0001 0 1 0 17.707031 33.707031 L 25 26.414062 L 32.292969 33.707031 A 1.0001 1.0001 0 1 0 33.707031 32.292969 L 26.414062 25 L 33.707031 17.707031 A 1.0001 1.0001 0 0 0 32.990234 15.986328 z" />
           </svg>
         </button>
+        <h2 className="text-xl font-bold mb-4 text-white">Owned Properties</h2>
+        <div className="grid grid-cols-3 gap-4">
+          {Array.isArray(ownedProperties) && ownedProperties.length > 0 ? (
+            ownedProperties.map((item, index) => (
+              <div key={index} className="bg-gray-800 p-4 rounded shadow-lg text-center">
+                <img src={`path_to_images/${item.name.replace(/\s+/g, '_').toLowerCase()}.png`} alt={item.name} className="mb-2 mx-auto" />
+                <h2 className="text-xl font-bold mb-2 text-white">{item.name}</h2>
+                <p className="mb-2 text-white">${item.price}</p>
+              </div>
+            ))
+          ) : (
+            <p className="text-white text-center w-full">No properties owned.</p>
+          )}
+        </div>
       </div>
     </div>
     </Modal>
   );
 };
 
-export default AchievementsModal;
-  
+export default OwnedPropertiesModal;

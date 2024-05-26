@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 
 const RandomEventButton = ({
   setBalance,
+  setIncome,
   income,
   firstBusinessMultiplier,
   timer,
@@ -10,6 +11,7 @@ const RandomEventButton = ({
   setModalMessage,
   upgradeCount,
   setUpgradeCount,
+  setUpgradeCost,
   secUpgradeCount,
   setSecUpgradeCount,
   thirdUpgradeCount,
@@ -49,8 +51,8 @@ const RandomEventButton = ({
       { type: 'reset', probability: 0 }, // 5% шанс
       { type: 'hourIncome', probability: 0 }, //5% шанс
       { type: 'tenIncome', probability: 0 }, // 10% шанс
-      { type: 'minusTen', probability: 0.1 }, // 10% шанс
-      { type: 'minusLvlOne', probability: 0.9}, // 10% шанс
+      { type: 'minusTen', probability: 0.5 }, // 10% шанс
+      { type: 'minusLvlOne', probability: 0.5}, // 10% шанс
       { type: 'minusLvlSec', probability: 0}, // 10% шанс
       { type: 'minusLvlThird', probability: 0}, // 10% шанс
       { type: 'plusLvlOne', probability: 0}, // 10% шанс
@@ -98,21 +100,48 @@ const RandomEventButton = ({
             setModalMessage(`-10 test: -$${tenIncome.toFixed(2)}`);
             setIsModalRandomEventOpen(true);
             return;
-          case 'minusLvlOne':
-            if (upgradeCount  === 1){
-            setUpgradeCount(currentUpgradeCount => currentUpgradeCount - 1)
-            setModalMessage(
-              `-1 lvl on first buissness!`
-            );
-              setIsModalRandomEventOpen(true);
-            }
-            else {
-              setModalMessage(
-                `Nothing changed!`
-              )
-              setIsModalRandomEventOpen(true);
-            };
-        return;
+            
+            case 'minusLvlOne':
+  if (upgradeCount > 0) {
+    const newUpgradeCount = upgradeCount - 1;
+    let newIncome = 1; // начальное значение дохода
+    let newUpgradeCost = 10; // начальное значение стоимости улучшения
+
+    for (let i = 0; i < newUpgradeCount; i++) {
+      const baseIncrement = 1.05; // Базовое увеличение на 5%
+      const additionalIncrement = (i % 5) * 0.01; // Дополнительное увеличение на 1% за каждый уровень в текущем цикле пяти улучшений
+      const incrementFactor = baseIncrement + additionalIncrement;
+
+      newIncome *= incrementFactor;
+
+      if ((i + 1) % 5 === 0) {
+        newIncome *= 1.25; // Дополнительное увеличение дохода на 25% на каждом пятом улучшении
+      }
+
+      if ((i + 1) % 10 === 0) {
+        newIncome *= 2; // Удвоение дохода на каждом десятом улучшении
+      }
+
+      const costMultiplier = 1.1 + ((i + 1) % 5 === 0 ? 0.05 : 0); // Основное увеличение на 10%, дополнительное на 5% каждое пятое улучшение
+      newUpgradeCost *= costMultiplier;
+    }
+
+    // Пропорциональное уменьшение дохода
+    const previousIncome = income;
+    newIncome *= previousIncome / income; // Пропорциональное уменьшение дохода на основе текущего значения дохода
+
+    setIncome(newIncome);
+    setUpgradeCount(newUpgradeCount);
+    setUpgradeCost(newUpgradeCost);
+    setModalMessage(`-1 lvl on first business!`);
+    setIsModalRandomEventOpen(true);
+  } else {
+    setModalMessage(`Nothing changed!`);
+    setIsModalRandomEventOpen(true);
+  }
+  return;
+
+            
           default:
             // Нет действия для неопределенного события
             break;

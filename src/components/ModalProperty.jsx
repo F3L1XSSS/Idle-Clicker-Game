@@ -1,18 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React from 'react';
 
-const PropertyModal = ({ isShowing, property, toggleModal }) => {
+import Modal from './Common/Modal';
+
+const PropertyModal = ({ isShowing, toggleModal, properties, handleBuy, ownedProperties }) => {
   if (!isShowing) return null;
 
-  const properties = [
-    { name: 'Big Mac', price: 2 },
-    { name: 'Flip Flops', price: 3 },
-    { name: 'Coca-Cola Pack', price: 5 },
-    { name: 'Movie Ticket', price: 12 },
-    { name: 'Book', price: 15 },
-    { name: 'Lobster Dinner', price: 45 }
-  ];
-
   return (
+    <Modal isShowing={isShowing} toggle={toggleModal}>
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-black p-4 rounded shadow-lg w-3/4 relative">
         <button
@@ -33,17 +27,23 @@ const PropertyModal = ({ isShowing, property, toggleModal }) => {
         <h2 className="text-xl font-bold mb-4 text-white">Property Details</h2>
         <div className="grid grid-cols-3 gap-4">
           {properties.map((item, index) => (
-            <div key={index} className="bg-black p-4 rounded shadow-lg text-center">
+            <div key={index} className="bg-gray-800 p-4 rounded shadow-lg text-center">
               <img src={`path_to_images/${item.name.replace(/\s+/g, '_').toLowerCase()}.png`} alt={item.name} className="mb-2 mx-auto" />
-              <h2 className="text-xl font-bold mb-2">{item.name}</h2>
-              <p className="mb-2">${item.price}</p>
-                <button className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700">Buy</button>
-              
+              <h2 className="text-xl font-bold mb-2 text-white">{item.name}</h2>
+              <p className="mb-2 text-white">${item.price}</p>
+              <button
+                onClick={() => handleBuy(item)}
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700"
+                disabled={Array.isArray(ownedProperties) && ownedProperties.some(p => p.name === item.name)}
+              >
+                {Array.isArray(ownedProperties) && ownedProperties.some(p => p.name === item.name) ? 'Owned' : 'Buy'}
+              </button>
             </div>
           ))}
         </div>
       </div>
     </div>
+    </Modal>
   );
 };
 
