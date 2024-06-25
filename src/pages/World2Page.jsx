@@ -58,14 +58,6 @@ const SecBuisnessWindow = ({
 };
 
 const World2Page = () => {
-  const SecResetGame = () => {
-    localStorage.removeItem('fBalance');
-    localStorage.removeItem('fIncome');
-    localStorage.removeItem('fUpgradeCost');
-    localStorage.removeItem('fUpgradeCount');
-    localStorage.removeItem('secPurchasedUpgrade');
-    localStorage.removeItem('purchasedLocations');
-  };
 
   const convertBalanceToYellowCrystal = () => {
     const conversionRate = 1000000000; // Курс обмена
